@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="/css/main.css">
+        <script type="text/javascript" src="/js/main.js"></script>
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     </head>
     <body>
         <div class="topnav">
@@ -11,30 +14,20 @@
             <a href="/whoami/">Whoami</a>
         </div>
         <div class="main">
-            <h1>Derniers posts</h1>
-            <!--article 1 preview-->
-            <a href="" class="article-preview-link">
-                <span class="article-preview">
-                    <img src="./img/previews/write-ups/htb-bookworm-preview.png">
-                    <h3>Compte rendu : HackTheBox - Bookworm (Insane)</h3>
-                </span>
-            </a>
+            <h1 id="lastWriteUpPreview" class="title">Mon dernier compte rendu</h1>
+            <script>
+                showLastWriteUpPreview();
+            </script>
             <hr/>
-            <!--article 2 preview-->
-            <a href="" class="article-preview-link">
-                <div class="article-preview">
-                    <img src="./img/previews/write-ups/htb-twomillion-preview.png">
-                    <h3>Compte rendu : HackTheBox - TwoMillion (Easy)</h3>
-                </div>
-            </a>
+            <h1 id="lastVideoPreview" class="title">Ma derniere video</h1>
+            <script>
+                //showLastWriteUpPreview();
+            </script>
             <hr/>
-            <!--article 3 preview-->
-            <a href="" class="article-preview-link">
-                <div class="article-preview">
-                    <img src="./img/previews/write-ups/htb-return-preview.png">
-                    <h3>Compte rendu : HackTheBox - Return (Medium)</h3>
-                </div>
-            </a>
+            <h1 id="lastProjectPreview" class="title">Mon dernier projet</h1>
+            <script>
+                //showLastWriteUpPreview();
+            </script>
         </div>
     </body>
 </html>

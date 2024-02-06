@@ -1,0 +1,135 @@
+.entry {
+    text-decoration: none;
+    display: block;
+    color: inherit;
+    transition: background-color 0.5s;
+    margin-bottom: 3%;
+}
+
+.entry:hover {
+    background-color: rgba(179, 179, 179, 0.5);
+    transition: background-color 0.5s;
+}
+
+.entry img {
+    display: inline;
+    width: 5%;
+    vertical-align: middle;
+}
+
+.entry h3 {
+    display: inline;
+    vertical-align: middle;
+    width: 5%;
+    padding-left: 2%;
+}
+
+.writeUp {
+    width: inherit;
+    font-size: large;
+}
+
+.header{
+    display: grid;
+    position: relative;
+    width: 100%;
+    height: 20vh;
+    align-items: center;
+    padding-left: 0px;
+}
+
+.headerImage {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    margin-left: 0px;
+    object-fit: cover;
+}
+
+.headerIcon{
+    position: absolute;
+    height: 90%;
+    margin-left: 5%;
+}
+
+.boxLink a{
+    color: inherit;
+}
+
+.mainTitle {
+    position: absolute;
+    text-align: right;
+    width: 90%;
+}
+
+.writeUp nav *{
+    color: inherit;
+    text-decoration: none;
+    width: 100%;
+    display: block;
+}
+
+.writeUp nav > div:hover{
+    background-color: rgb(82, 82, 82);
+}
+
+.writeUp nav .t2{
+    color: #5e87c9;
+    text-indent: 4ch;
+}
+
+.code{
+    width: inherit;
+    overflow-x: auto;
+    background-color: #202020;
+    padding: 20px;
+}
+
+.highlight-red{
+    color: red;
+}
+
+.highlight-red_background{
+    background-color: rgba(255,0,0,0.5);
+}
+
+.writeUp > table th,td {
+    border: 1px solid rgba(255, 253, 247, 0.09);
+    border-collapse: collapse;
+    padding: 5px;
+}
+
+.writeUp > table {
+    border-collapse: collapse;
+}
+
+.writeUp > li{
+    list-style-type: disc;
+}
+
+.writeUp > h2{
+    font-size: x-large;
+    color: #5e87c9;
+}
+
+.writeUp .table-header{
+    width: 50%;
+}
+
+.writeUp h1{
+    font-size: xx-large;
+}
+
+.writeUp .highlight-blue{
+    color: #5e87c9;
+}
+
+.writeUp blockquote{
+    border-left: 3px solid #5e87c9;
+    margin-left: 2%;
+    padding-left: 5%;
+}
+
+.writeUp img{
+    width: 100%;
+}

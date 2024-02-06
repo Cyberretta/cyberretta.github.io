@@ -2,6 +2,43 @@
 <html>
     <head>
         <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/write-ups.css">
+        <script>
+            plaforms = ["HTB", "THM"];
+            difficulties = ["Easy", "Medium", "Hard", "Insane"];
+            function capitalizeFirstLetter(string) {
+                return string.charAt(0).toUpperCase() + string.slice(1);
+            }
+            var currentUrl = new URL(window.location.href);
+            var platform = currentUrl.searchParams.get("platform").toUpperCase();
+            var difficulty = capitalizeFirstLetter(currentUrl.searchParams.get("difficulty"));
+            var box = currentUrl.searchParams.get("box");
+            if(plaforms.includes(platform) && difficulties.includes(difficulty)){
+                if(box){
+                    //Fetch the write-up html file
+                    var writeUpUrl = `https://raw.githubusercontent.com/Cyberretta/Write-Ups-${platform}/main/${difficulty}/${box}/${box}.html`;
+                    fetch(writeUpUrl, {
+                    })
+                    .then(response => response.text())
+                    .then(text => document.getElementById("main").innerHTML = text);
+                }else{
+                    //Fetch list of write ups according to the specified platform and difficulty
+                    var url = "https://api.github.com/repos/Cyberretta/Write-Ups-" + platform + "/contents/" + difficulty;
+                    fetch(url, {
+                    })
+                    .then(response => response.json())
+                    .then(jsonData => {
+                        var mainContent = "<h1>HackTheBox : Easy</h1>";
+                        for(var index in jsonData){
+                            var boxName = jsonData[index]["name"].split(".")[0];
+                            var entryContent = `<a href="./?platform=${platform}&difficulty=${difficulty}&box=${boxName}" class="entry"><span><img src="https://raw.githubusercontent.com/Cyberretta/Write-Ups-${platform}/main/${difficulty}/${boxName}/icon.png"><h3>${boxName}</h3></span></a>`;
+                            mainContent += entryContent;
+                        }
+                        document.getElementById("main").innerHTML = mainContent;
+                    });
+                }
+            }
+        </script>
     </head>
     <body>
         <div class="topnav">
@@ -10,23 +47,64 @@
             <a href="/projects/">Projets</a>
             <a href="/whoami/">Whoami</a>
         </div>
-        <div class="main">
+        <div class="main" id="main">
             <h1>Comptes rendus</h1>
-            <h2>HackTheBox</h2>
-            <a href="" class="article-preview-link">
-                <span class="article-preview">
-                    <img src="./img/previews/write-ups/htb-bookworm-preview.png">
-                    <h3>Compte rendu : HackTheBox - Bookworm (Insane)</h3>
-                </span>
-            </a>
-            <hr/>
-            <h2>TryHackMe</h2>
-            <a href="" class="article-preview-link">
-                <div class="article-preview">
-                    <img src="./img/previews/write-ups/htb-twomillion-preview.png">
-                    <h3>Compte rendu : HackTheBox - TwoMillion (Easy)</h3>
-                </div>
-            </a>
+            <div>
+                <h2>HackTheBox</h2>
+                <a href="./?platform=HTB&difficulty=easy" class="entry">
+                    <span>
+                        <img src="/img/difficulties/easy.png">
+                        <h3>Easy</h3>
+                    </span>
+                </a>
+                <a href="./?platform=HTB&difficulty=medium" class="entry">
+                    <span>
+                        <img src="/img/difficulties/medium.png">
+                        <h3>Medium</h3>
+                    </span>
+                </a>
+                <a href="./?platform=HTB&difficulty=hard" class="entry">
+                    <span>
+                        <img src="/img/difficulties/hard.png">
+                        <h3>Hard</h3>
+                    </span>
+                </a>
+                <a href="./?platform=HTB&difficulty=insane" class="entry">
+                    <span>
+                        <img src="/img/difficulties/insane.png">
+                        <h3>Insane</h3>
+                    </span>
+                </a>
+                <hr/>
+            </div>
+            <div>
+                <h2>TryHackMe</h2>
+                <a href="./?platform=THM&difficulty=easy" class="entry">
+                    <span>
+                        <img src="/img/difficulties/easy.png">
+                        <h3>Easy</h3>
+                    </span>
+                </a>
+                <a href="./?platform=THM&difficulty=medium" class="entry">
+                    <span>
+                        <img src="/img/difficulties/medium.png">
+                        <h3>Medium</h3>
+                    </span>
+                </a>
+                <a href="./?platform=THM&difficulty=hard" class="entry">
+                    <span>
+                        <img src="/img/difficulties/hard.png">
+                        <h3>Hard</h3>
+                    </span>
+                </a>
+                <a href="./?platform=THM&difficulty=insane" class="entry">
+                    <span>
+                        <img src="/img/difficulties/insane.png">
+                        <h3>Insane</h3>
+                    </span>
+                </a>
+                <hr/>
+            </div>
         </div>
     </body>
 </html>
