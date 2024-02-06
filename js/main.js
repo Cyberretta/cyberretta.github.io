@@ -1,5 +1,5 @@
 async function getLastWriteUpFromPlatform(platform) {
-    let re = new RegExp("Update [A-Za-z0-9]+\.html");
+    let re = new RegExp("Upload [A-Za-z0-9]+\.html");
     platform = platform.toUpperCase();
     let commitsUrl = `https://api.github.com/repos/Cyberretta/Write-Ups-${platform}/commits`;
 
