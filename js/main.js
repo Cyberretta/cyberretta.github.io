@@ -13,7 +13,6 @@ async function getLastWriteUpFromPlatform(platform) {
                 let date = jsonData[commit]["commit"]["author"]["date"];
                 let commitJsonData = await (await fetch(`https://api.github.com/repos/Cyberretta/Write-Ups-${platform}/commits/${sha}`)).json();
                 let filePath = commitJsonData["files"][0]["filename"];
-                console.log(filePath);
                 return [filePath, date];
             }
         }
@@ -69,7 +68,6 @@ async function getBoxId(boxInfo){
 
 async function showLastWriteUpPreview(){
     let lastWriteUp = await getLastWriteUp();
-    let boxId = await getBoxId(lastWriteUp);
     let platform;
     if(lastWriteUp[0] === "HTB"){
         platform = "HackTheBox";
@@ -98,4 +96,30 @@ async function showLastVideoPreview(){
         document.getElementById("lastVideoPreview").src = `https://youtube.com/embed/${id}?controls=0&autoplay=1`;
         document.getElementById("lastVideoTitle").innerHTML = title;
     }).catch(error => console.log('error', error));
+}
+
+async function listProjects(){
+    const blacklist = ["Write-Ups-HTB", "Write-Ups-THM", "cyberretta.github.io"];
+    let projectsUrl = "https://api.github.com/users/Cyberretta/repos";
+    let response = await fetch(projectsUrl);
+    let jsonData = await response.json();
+    let projects = [];
+    for(let entry in jsonData){
+        let projectName = jsonData[entry]["name"];
+        if(!blacklist.includes(projectName)){
+            projects.push(projectName);
+        }
+    }
+    
+    return projects;
+}
+
+async function showLastProjectPreview(){
+    let projects = await listProjects();
+    let lastProject = projects[0];
+    let previewImgUrl = `https://raw.githubusercontent.com/Cyberretta/${lastProject}/main/preview.png`;
+
+    //Update last project preview
+    document.getElementById("lastProjectTitle").innerHTML = lastProject;
+    document.getElementById("lastProjectPreview").src = previewImgUrl;
 }
