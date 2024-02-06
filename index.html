@@ -14,19 +14,33 @@
             <a href="/whoami/">Whoami</a>
         </div>
         <div class="main">
-            <h1 id="lastWriteUpPreview" class="title">Mon dernier compte rendu</h1>
+            <a href="" id="lastWriteUpLink" class="item-preview">
+                <div>
+                    <h1 class="title">Mon dernier compte rendu</h1>
+                    <img class="item-preview-illustration" id="lastWriteUpIllustration" src=""></iframe>
+                    <h3 id="lastWriteUpTitle">Write up name</h3>
+                </div>
+            </a>
+            <hr/>
+            <div class="item-preview">
+                <h1 class="title">Ma derniere video</h1>
+                <span>
+                    <iframe class="item-preview-illustration" id="lastVideoPreview" src=""></iframe>
+                    <h3 id="lastVideoTitle">Video name</h3>
+                </span>
+            </div>
+            <hr/>
+            <div class="item-preview">
+                <h1 class="title">Mon dernier projet</h1>
+                <span>
+                    <img class="item-preview-illustration" id="lastProjectPreview" src=""></img>
+                    <h3 id="lastProjectTitle">Project name</h3>
+                </span>
+            </div>
             <script>
+                showLastVideoPreview();
                 showLastWriteUpPreview();
-            </script>
-            <hr/>
-            <h1 id="lastVideoPreview" class="title">Ma derniere video</h1>
-            <script>
-                //showLastWriteUpPreview();
-            </script>
-            <hr/>
-            <h1 id="lastProjectPreview" class="title">Mon dernier projet</h1>
-            <script>
-                //showLastWriteUpPreview();
+                showLastProjectPreview();
             </script>
         </div>
     </body>

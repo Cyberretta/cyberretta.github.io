@@ -60,19 +60,6 @@ async function getLastWriteUp() {
     return [platform, difficulty, boxName];
 }
 
-async function getLastWriteUpPreview(){
-    let lastWriteUp = await getLastWriteUp();
-    let boxId = await getBoxId(lastWriteUp);
-    let platform;
-    if(lastWriteUp[0] === "HTB"){
-        platform = "HackTheBox";
-    }else if(lastWriteUp[0] === "THM"){
-        platform = "TryHackMe";
-    }
-    let preview = `<a href="" class="article-preview-link"><span class="article-preview"><iframe src="https://www.hackthebox.com/achievement/machine/1264762/${boxId}"></iframe><h3>Compte rendu : ${platform} - ${lastWriteUp[2]} (${lastWriteUp[1]})</h3></span></a>`
-    return preview;
-}
-
 async function getBoxId(boxInfo){
     let boxInfoUrl = `https://raw.githubusercontent.com/Cyberretta/Write-Ups-${boxInfo[0]}/main/${boxInfo[1]}/${boxInfo[2]}/boxId.txt`;
     let response = await fetch(boxInfoUrl);
@@ -81,6 +68,34 @@ async function getBoxId(boxInfo){
 }
 
 async function showLastWriteUpPreview(){
-    let preview = await getLastWriteUpPreview();
-    document.getElementById("lastWriteUpPreview").innerHTML = preview;
+    let lastWriteUp = await getLastWriteUp();
+    let boxId = await getBoxId(lastWriteUp);
+    let platform;
+    if(lastWriteUp[0] === "HTB"){
+        platform = "HackTheBox";
+    }else if(lastWriteUp[0] === "THM"){
+        platform = "TryHackMe";
+    }
+    let title = `Compte rendu : ${platform} - ${lastWriteUp[2]} (${lastWriteUp[1]})`;
+    let link = `./write-ups?platform=${lastWriteUp[0]}&difficulty=${lastWriteUp[1]}&box=${lastWriteUp[2]}`;
+
+    document.getElementById("lastWriteUpLink").href = link;
+    document.getElementById("lastWriteUpTitle").innerHTML = title;
+    document.getElementById("lastWriteUpIllustration").src = `https://raw.githubusercontent.com/Cyberretta/Write-Ups-${lastWriteUp[0]}/main/${lastWriteUp[1]}/${lastWriteUp[2]}/boxFinished.png`;
+}
+
+async function showLastVideoPreview(){
+    const cid = "UCl1_r1WXNuV9hnEQVemVzpw";
+    const channelURL = encodeURIComponent(`https://www.youtube.com/feeds/videos.xml?channel_id=${cid}`)
+    const reqURL = `https://api.rss2json.com/v1/api.json?rss_url=${channelURL}`;
+
+    fetch(reqURL)
+    .then(response => response.json())
+    .then(result => {
+        const link = result["items"][0].link;
+        const title = result["items"][0].title;
+        const id = link.substr(link.indexOf("=") + 1);
+        document.getElementById("lastVideoPreview").src = `https://youtube.com/embed/${id}?controls=0&autoplay=1`;
+        document.getElementById("lastVideoTitle").innerHTML = title;
+    }).catch(error => console.log('error', error));
 }
