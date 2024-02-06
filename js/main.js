@@ -122,4 +122,5 @@ async function showLastProjectPreview(){
     //Update last project preview
     document.getElementById("lastProjectTitle").innerHTML = lastProject;
     document.getElementById("lastProjectPreview").src = previewImgUrl;
+    document.getElementById("lastProjectLink").href = "/projects/AwsLogAnalyser.html";
 }
