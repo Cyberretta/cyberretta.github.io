@@ -122,7 +122,7 @@ async function showLastProjectPreview(){
     //Update last project preview
     document.getElementById("lastProjectTitle").innerHTML = lastProject;
     document.getElementById("lastProjectPreview").src = previewImgUrl;
-    document.getElementById("lastProjectLink").href = "/projects/AwsLogAnalyser.html";
+    document.getElementById("lastProjectLink").href = `https://github.com/Cyberretta/${lastProject}`;
 }
 
 //This function is used to adapt stylesheet if the client uses a mobile device (e.g : android, iphone...)
