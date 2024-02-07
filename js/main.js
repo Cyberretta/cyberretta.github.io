@@ -127,7 +127,7 @@ async function showLastProjectPreview(){
 
 //This function is used to adapt stylesheet if the client uses a mobile device (e.g : android, iphone...)
 function checkMobileBrowser() {
-    if(window.innerHeight > window.innerWidth){
+    if(screen.availHeight > screen.availWidth){
         return true;
     }else{
         return false;
