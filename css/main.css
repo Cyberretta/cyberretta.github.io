@@ -84,3 +84,29 @@ body {
     background-color: #04AA6D;
     color: white;
 }
+
+.entry {
+    text-decoration: none;
+    display: block;
+    color: inherit;
+    transition: background-color 0.5s;
+    margin-bottom: 3%;
+}
+
+.entry:hover {
+    background-color: rgba(179, 179, 179, 0.5);
+    transition: background-color 0.5s;
+}
+
+.entry img {
+    display: inline;
+    width: 5%;
+    vertical-align: middle;
+}
+
+.entry h3 {
+    display: inline;
+    vertical-align: middle;
+    width: 5%;
+    padding-left: 2%;
+}

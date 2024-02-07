@@ -128,8 +128,9 @@ async function showLastProjectPreview(){
 //This function is used to adapt stylesheet if the client uses a mobile device (e.g : android, iphone...)
 function checkMobileBrowser() {
     if(screen.availHeight > screen.availWidth){
-        return true;
-    }else{
-        return false;
+        document.getElementById("main").style.marginRight = "0";
+        document.getElementById("main").style.marginLeft = "0";
     }
-  };
+};
+
+checkMobileBrowser();
