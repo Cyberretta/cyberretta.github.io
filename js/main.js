@@ -114,6 +114,17 @@ async function listProjects(){
     return projects;
 }
 
+async function showProjectsList(){
+    projects = await listProjects();
+    mainContent = document.getElementById("main").innerHTML;
+    for(var index in projects){
+        var projectName = projects[index];
+        var entryContent = `<a href="https://github.com/Cyberretta/${projectName}/" class="entry"><span><img src="https://raw.githubusercontent.com/Cyberretta/${projectName}/main/icon.png"><h3>${projectName}</h3></span></a>`;
+        mainContent += entryContent;
+    }
+    document.getElementById("main").innerHTML = mainContent;
+}
+
 async function showLastProjectPreview(){
     let projects = await listProjects();
     let lastProject = projects[0];
