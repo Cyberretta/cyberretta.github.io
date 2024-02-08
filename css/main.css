@@ -2,6 +2,7 @@
 html {
     height: 100%;
     color: #ffffff;
+    font-size: larger;
 }
 
 body {
@@ -9,10 +10,6 @@ body {
     height: 100%;
     font-family: monospace;
     background-color: #191919;
-}
-
-p {
-    font-size: larger; 
 }
 
 .main {
