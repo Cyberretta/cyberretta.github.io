@@ -51,6 +51,11 @@
     text-indent: 4ch;
 }
 
+.writeUp nav .t3{
+    color: #007700;
+    text-indent: 8ch;
+}
+
 .code{
     width: inherit;
     overflow-x: auto;
