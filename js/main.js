@@ -148,17 +148,22 @@ function checkMobileBrowser() {
 function writeNavMenu(path){
     let navMenu = document.getElementById("navMenu");
     let innerHTML = `<img src="/img/avatar.png">
-    <a href="/">Accueil</a>
-    <a href="/write-ups/">Comptes rendus</a>
-    <a href="/projects/">Projets</a>
-    <a href="/whoami/">Whoami</a>
-    <a href="https://discord.com/invite/SJeH5GeaUm" target="_blank">Discord : CTF Hacking France</a>`;
+    <a href="/"><img src="/img/index.png">Accueil</a>
+    <a href="/write-ups/"><img src="/img/write-ups.png">Comptes rendus</a>
+    <a href="/projects/"><img src="/img/projects.png">Projets</a>
+    <a href="/whoami/"><img src="/img/whoami.png">Whoami</a>
+    <a href="https://discord.com/invite/SJeH5GeaUm" target="_blank"><img src="/img/discord_server.png">Discord : CTF Hacking France</a>`;
     
     navMenu.innerHTML = innerHTML;
     let children = navMenu.children;
+    let locationArray = document.location.toString().split("/");
+    locationArray = locationArray.slice(3, locationArray.length);
     for(let i = 0; i < children.length; i++){
-        if(children[i].href && children[i].href == document.location){
-            children[i].className = "active";
+        if(children[i].tagName == "A"){
+            let childrenLocationArray = children[i].href.split("/").slice(3, children[i].length);
+            if(childrenLocationArray[0] == locationArray[0]){
+                children[i].className = "active";
+            }
         }
     }
 }
