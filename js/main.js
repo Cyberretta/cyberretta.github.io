@@ -143,3 +143,22 @@ function checkMobileBrowser() {
         document.getElementById("main").style.marginLeft = "0";
     }
 };
+
+//This function is used to write the navigation menu to the page.
+function writeNavMenu(path){
+    let navMenu = document.getElementById("navMenu");
+    let innerHTML = `<img src="/img/avatar.png">
+    <a href="/">Accueil</a>
+    <a href="/write-ups/">Comptes rendus</a>
+    <a href="/projects/">Projets</a>
+    <a href="/whoami/">Whoami</a>
+    <a href="https://discord.com/invite/SJeH5GeaUm" target="_blank">Discord : CTF Hacking France</a>`;
+    
+    navMenu.innerHTML = innerHTML;
+    let children = navMenu.children;
+    for(let i = 0; i < children.length; i++){
+        if(children[i].href && children[i].href == document.location){
+            children[i].className = "active";
+        }
+    }
+}

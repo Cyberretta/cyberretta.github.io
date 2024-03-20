@@ -42,12 +42,7 @@
         </script>
     </head>
     <body>
-        <div class="topnav">
-            <img src="/img/avatar.png">
-            <a href="/">Accueil</a>
-            <a class="active" href="/write-ups/">Comptes rendus</a>
-            <a href="/projects/">Projets</a>
-            <a href="/whoami/">Whoami</a>
+        <div id="navMenu" class="topnav">
         </div>
         <div class="main" id="main">
             <h1>Comptes rendus</h1>
@@ -108,6 +103,7 @@
                 <hr/>
             </div>
             <script>
+                writeNavMenu();
                 checkMobileBrowser();
             </script>
         </div>
