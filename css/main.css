@@ -9,16 +9,18 @@ body {
     margin: 0;
     height: 100%;
     font-family: monospace;
-    background-color: #191919;
+    background-image: url("/img/background.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .main {
-    background-color: #191919;
-    margin-right: 20%;
+    background-color: rgba(25, 25, 25, 0.75);
     margin-left: 20%;
     min-height: 100%;
     padding-left: 10%;
-    padding-right: 10%;
+    padding-right: 30%;
     padding-top: 1px;
     padding-bottom: 10%;
 }
