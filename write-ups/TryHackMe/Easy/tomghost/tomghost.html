@@ -1,0 +1,151 @@
+<title>TryHackMe - tomghost (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/tomghost/icon.jpg"/>
+      <p class="mainTitle">TryHackMe - tomghost (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <p>Let's run an agressive <a href="https://nmap.org/book/man.html">nmap</a> scan against the target :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image1.jpg"/>
+    <h1 id="initial-access">Initial access</h1>
+    <p>Since we know Tomcat 9.0.30 is running on the target, we can look for exploits on <a href="https://www.exploit-db.com/">Exploit-DB</a> :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image2.jpg"/>
+    <p>
+        This exploit should work on Tomcat 9.0.30. Let's run the <a href="https://www.metasploit.com/">Metasploit Framework</a> console using 
+        <code>msfconsole</code> and type <code>search Ghostcat</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image3.jpg"/>
+    <p>Let's use <code>use 0</code> to select this exploit and then `options` to see the options for this exploit :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image4.jpg"/>
+    <p>
+        Here, we only need to set the <code>RHOSTS</code> value to the target IP address using <code>set RHOSTS &lt;TARGET_IP&gt;</code>. After 
+        that, we can use <code>run</code> to run the exploit :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image5.jpg"/>
+    <p>We found a set of credentials. Let's try to use it on port 22 (SSH) :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image6.jpg"/>
+    <p>We are logged in as <code>skyfuck</code> !</p>
+    <h1 id="post-exploitation">Post-exploitation</h1>
+    <h2 id="local-reconnaissance">Local reconnaissance</h2>
+    <p>Let's take a look at the files in our home directory :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image7.jpg"/>
+    <p>
+        Let's download the files <code>tryhackme.asc</code> and <code>credentials.pgp</code> to our attacking host using netcat. Then, we 
+        can extract a hash from <code>tryhackme.asc</code> using <code>gpg2john</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image8.jpg"/>
+    <p>Now, let's try to crack this hash using [john](https://www.openwall.com/john/doc/) :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image9.jpg"/>
+    <p>Now that we have the passphrase, we can decrypt the file <code>credentials.pgp</code> and read its content :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image10.jpg"/>
+    <h2 id="privilege-escalation-merlin">Privilege escalation (merlin)</h2>
+    <p>Let's try to use those crendentials to login as <code>merlin</code> :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image11.jpg"/>
+    <p>Now we are logged in as <code>merlin</code> ! We can get the first flag in <code>/home/merlin/user.txt</code> :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image12.jpg"/>
+    <h2 id="local-reconnaissance-merlin">Local reconnaissance (merlin)</h2>
+    <p>Let's take a look at our sudo rights using <code>sudo -l</code> :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image13.jpg"/>
+    <p>
+        We can run <code>zip</code> as <code>root</code> without password. We can search for <code>zip</code> 
+        on <a href="https://gtfobins.github.io/">GTFOBins</a> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image14.jpg"/>
+    <h2 id="privilege-escalation-root">Privilege escalation (root)</h2>
+    <p>Let's get a shell using this commands :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image15.jpg"/>
+    <p>And now we are root ! Let's get the root flag in <code>/root/root.txt</code> :</p>
+    <img src="/write-ups/TryHackMe/Easy/tomghost/image16.jpg"/>
+    <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+    <h2 id="file-read-inclusion">File Read/Inclusion</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Affected component</td>
+            <td>Apache Tomcat</td>
+        </tr>
+        <tr>
+            <td>CVSS 3.0 score</td>
+            <td><mark class="highlight_red">7.5</mark></td>
+        </tr>
+        <tr>
+            <td>Severity</td>
+            <td><mark class="highlight_red">HIGH</mark></td>
+        </tr>
+        <tr>
+            <td>Attack vector</td>
+            <td>Network</td>
+        </tr>
+        <tr>
+            <td>Impact</td>
+            <td>
+            Allows an attacker to read arbitrary files from the target server.<br>
+            <br>
+            This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+            </td>
+        </tr>
+        <tr>
+            <td>Remediation proposition</td>
+            <td>Update Apache Tomcat to the latest version.</td>
+        </tr>
+        </tbody>
+    </table>
+    <h2 id="weak-password">Weak password</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Affected component</td>
+            <td>tryhackme.asc file</td>
+        </tr>
+        <tr>
+            <td>CVSS 3.0 score</td>
+            <td><mark class="highlight_orange">6.2</mark></td>
+        </tr>
+        <tr>
+            <td>Severity</td>
+            <td><mark class="highlight_orange">MEDIUM</mark></td>
+        </tr>
+        <tr>
+            <td>Attack vector</td>
+            <td>Local</td>
+        </tr>
+        <tr>
+            <td>Impact</td>
+            <td>
+                If an attacker achieve to gain access to <code>tryhackme.asc</code>, he can crack the password to decrypt 
+                <code>credentials.pgp</code>.<br>
+                <br>
+                This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+            </td>
+        </tr>
+        <tr>
+            <td>Remediation proposition</td>
+            <td>Set up a strong password policy to ensure that users use strong password that will take too long for an attacker to crack.</td>
+        </tr>
+        </tbody>
+    </table>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>CVE-2020-1938 (Ghostcat) : <a href="https://nvd.nist.gov/vuln/detail/cve-2020-1938">https://nvd.nist.gov/vuln/detail/cve-2020-1938</a></li>
+    </ul>
+</div>

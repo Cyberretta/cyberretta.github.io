@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cyberretta - Comptes rendus</title>
+        <meta charset="utf8">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/write-ups.css">
+        <script type="text/javascript" src="/js/main.min.js"></script>
+        <script type="text/javascript" src="/js/write-ups.min.js"></script>
+        <link rel="stylesheet" href="/css/navMenu.css">
+    </head>
+    <body>
+        <div id="navMenu">
+        </div>
+        <div class="main" id="main">
+            <div id="searchBox">
+                <div class="filter">
+                    <p class="label">Recherche</p>
+                    <div contenteditable=true id="inputText_name" type="text" class="inputText"></div>
+                </div>
+                <div class="filter">
+                    <p class="label">Difficultés</p>
+                    <div id="comboBox_difficulty" class="comboBox" tabindex="-1">
+                        <div class="head">
+                            <div class="selectionContainer"><p class="selection empty">Aucun filtre</p></div>
+                            <div class="stateIconContainer"><img class="stateIcon" src="/img/arrow.png"></div>
+                        </div>
+                        <div class="entriesList">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter">
+                    <p class="label">Plateformes</p>
+                    <div id="comboBox_platform" class="comboBox" tabindex="-1">
+                        <div class="head">
+                            <div class="selectionContainer"><p class="selection empty">Aucun filtre</p></div>
+                            <div class="stateIconContainer"><img class="stateIcon" src="/img/arrow.png"></div>
+                        </div>
+                        <div class="entriesList">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter">
+                    <p class="label">OS</p>
+                    <div id="comboBox_os" class="comboBox" tabindex="-1">
+                        <div class="head">
+                            <div class="selectionContainer"><p class="selection empty">Aucun filtre</p></div>
+                            <div class="stateIconContainer"><img class="stateIcon" src="/img/arrow.png"></div>
+                        </div>
+                        <div class="entriesList">
+                        </div>
+                    </div>
+                </div>
+                <div class="filter">
+                    <p class="label">Tags</p>
+                    <div class="addTagContainer">
+                        <p class="label">Ajouter :</p>
+                        <div contenteditable="true" type="text" class="addTagInput"></div>
+                    </div>
+                    <div id="container_tags" class="tagsContainer" tabindex="-1">
+                        <p class="noTagsSpecified">Aucun tags spécifiés</p>
+                    </div>
+                </div>
+                <input class="button apply" type="button" value="Appliquer" disabled>
+                <input class="button reset" style="display: none;" type="button" value="Réinitialiser les filtres" disabled>
+            </div>
+            <h1 style="width: 100%; display: inline-block;">Comptes rendus</h1>
+            <p>
+                Vous cherchez un compte-rendu d'un challenge ou d'une box ? Ici, vous pourrez trouver mes comptes-rendus sur les box ou 
+                challenges que j'ai terminé (et pour lesquelles j'ai pris le temps de faire un compte-rendu). Pour les plateformes comme 
+                HackTheBox, je ne poste que les comptes-rendus de challenges retirés conformément aux règles de la plateforme.
+            </p>
+            <hr>
+            <div class="writeUpsContainer" id="writeUpsList">
+            </div>
+            <div class="pagesContainer">
+            </div>
+        </div>
+    </body>
+</html>

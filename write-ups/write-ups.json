@@ -1,0 +1,285 @@
+{
+    "WriteUps": [
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/5837ac5e28291146a9f2a8a015540c28.png",
+            "name": "Active",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["AD","Misconfiguration","Kerberoasting"],
+            "url": "https://app.hackthebox.com/machines/148"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/b966fca9d30da209a90dffad5f390acf.png",
+            "name": "Antique",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Information disclosure", "CVE", "SNMP"],
+            "url": "https://app.hackthebox.com/machines/400"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/52e077ae40899ab8b024afd51cb29b1c.png",
+            "name": "Blue",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["CVE", "SMB"],
+            "url": "https://app.hackthebox.com/machines/51"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/a725533911ba94a880899fbf900d988c.png",
+            "name": "Broker",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Misconfiguration", "Web", "CVE"],
+            "url": "https://app.hackthebox.com/machines/578"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/a6942ab57b6a79f71240420442027334.png",
+            "name": "Busqueda",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Web", "Python"],
+            "url": "https://app.hackthebox.com/machines/537"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/381683fd107da11f1dc916401ae8aee0.png",
+            "name": "Grandpa",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["Web", "IIS", "WebDav", "CVE"],
+            "url": "https://app.hackthebox.com/machines/13"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/defa149ea7e259a4709a03a5825e970d.png",
+            "name": "Return",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["Misconfiguration", "Web", "LDAP"],
+            "url": "https://app.hackthebox.com/machines/401"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/ca7f69a02eebf53deb3cd1611dd3f55e.png",
+            "name": "Soccer",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Misconfiguration", "Web", "SQLi"],
+            "url": "https://app.hackthebox.com/machines/519"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/cbfa26b4a4044677e93779a44bbd458f.png",
+            "name": "Topology",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Web", "LaTeX", "Misconfiguration"],
+            "url": "https://app.hackthebox.com/machines/546"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://labs.hackthebox.com/storage/avatars/d7bc2758fb7589dfa046bee9ce4d75cb.png",
+            "name": "TwoMillion",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["OS Command Injection", "Web", "API", "CVE"],
+            "url": "https://app.hackthebox.com/machines/547"
+        },
+        {
+            "difficulty": "Hard",
+            "icon": "https://labs.hackthebox.com/storage/avatars/a7af9035e5089332dfbfeb328d663f3e.png",
+            "name": "Flight",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["Web", "LFI", "LDAP", "SMB"],
+            "url": "https://app.hackthebox.com/machines/510"
+        },
+        {
+            "difficulty": "Hard",
+            "icon": "https://labs.hackthebox.com/storage/avatars/caac8772de14a769c0bfe95756bceebe.png",
+            "name": "Pollution",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Information disclosure", "Prototype pollution", "Web", "XXE", "Redis", "LFI", "MySQL", "NodeJS"],
+            "url": "https://app.hackthebox.com/machines/517"
+        },
+        {
+            "difficulty": "Insane",
+            "icon": "https://labs.hackthebox.com/storage/avatars/f0c89af6ee134e1b432d95e4528cf0cd.png",
+            "name": "Bookworm",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Directory traversal", "Web", "XSS", "IDOR", "SQLi", "NodeJS"],
+            "url": "https://app.hackthebox.com/machines/544"
+        },
+        {
+            "difficulty": "Hard",
+            "icon": "https://labs.hackthebox.com/storage/avatars/2cdef06b99725f3dcce38431a95b7b77.png",
+            "name": "Office",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["Joomla", "AD", "CVE"],
+            "url": "https://app.hackthebox.com/machines/588"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://tryhackme-images.s3.amazonaws.com/room-icons/e11be3e91db093a84dd92e794e9f8181.png",
+            "name": "TakeOver",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["Web", "DNS"],
+            "url": "https://tryhackme.com/r/room/takeover"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://tryhackme-images.s3.amazonaws.com/room-icons/c583f9d6cc8a7f2a749fad911eb81eb3.png",
+            "name": "DigDug",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["DNS"],
+            "url": "https://tryhackme.com/r/room/digdug"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://tryhackme-images.s3.amazonaws.com/room-icons/6c9609e592b4ac47833804790222c091.png",
+            "name": "Confidential",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["PDF"],
+            "url": "https://tryhackme.com/r/room/confidential"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://tryhackme-images.s3.amazonaws.com/room-icons/5dbc4e7d8515e7bc05b7742f26944ae9.png",
+            "name": "Agent T",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["Web", "PHP", "CVE"],
+            "url": "https://tryhackme.com/r/room/agentt"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "https://tryhackme-images.s3.amazonaws.com/room-icons/016dea7c96e8b422241016405b571c8b.jpeg",
+            "name": "tomghost",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["Web", "Tomcat", "CVE"],
+            "url": "https://tryhackme.com/r/room/tomghost"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/LazyAdmin/icon.jpg",
+            "name": "LazyAdmin",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["Web", "Sweet Rice", "CVE", "File upload", "Misconfiguration"],
+            "url": "https://tryhackme.com/r/room/lazyadmin"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/0x41haz/icon.jpg",
+            "name": "0x41haz",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["Reverse", "ELF"],
+            "url": "https://tryhackme.com/r/room/0x41haz"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/Pickle Rick/icon.jpg",
+            "name": "Pickle Rick",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["Web", "Command filters bypass"],
+            "url": "https://tryhackme.com/r/room/picklerick"
+        },
+        {
+            "difficulty": "Medium",
+            "icon": "/write-ups/TryHackMe/Medium/Secret Recipe/icon.png",
+            "name": "Secret Recipe",
+            "os": "Windows",
+            "platform": "TryHackMe",
+            "tags": ["Forensic", "Windows registry"],
+            "url": "https://tryhackme.com/r/room/registry4n6"
+        },
+        {
+            "difficulty": "Medium",
+            "icon": "/write-ups/TryHackMe/Medium/Classic Passwd/icon.jpg",
+            "name": "Classic Passwd",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["Reverse", "ELF"],
+            "url": "https://tryhackme.com/r/room/classicpasswd"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/Corridor/icon.png",
+            "name": "Corridor",
+            "os": "Non spécifié",
+            "platform": "TryHackMe",
+            "tags": ["Web", "IDOR"],
+            "url": "https://tryhackme.com/r/room/corridor"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/Bounty Hacker/icon.jpg",
+            "name": "Bounty Hacker",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["FTP", "Bruteforce", "SSH"],
+            "url": "https://tryhackme.com/r/room/cowboyhacker"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/Simple CTF/icon.png",
+            "name": "Simple CTF",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["Web", "CVE", "SQLi", "Credentials reuse", "CMS Made Simple"],
+            "url": "https://tryhackme.com/r/room/easyctf"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/RootMe/icon.png",
+            "name": "RootMe",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": [""],
+            "url": "https://tryhackme.com/r/room/rrootme"
+        },
+        {
+            "difficulty": "Very easy",
+            "icon": "/write-ups/HackTheBox/Very easy/Brutus/icon.png",
+            "name": "Brutus",
+            "os": "Linux",
+            "platform": "HackTheBox",
+            "tags": ["Forensic", "DFIR", "Incident response", "Logs", "Bruteforce", "SSH"],
+            "url": "https://app.hackthebox.com/sherlocks/Brutus",
+            "type": "Sherlock"
+        },
+        {
+            "difficulty": "Very easy",
+            "icon": "/write-ups/HackTheBox/Very easy/Campfire-1/icon.png",
+            "name": "Campfire-1",
+            "os": "Windows",
+            "platform": "HackTheBox",
+            "tags": ["Forensic", "DFIR", "Incident response", "Logs", "Kerberoasting"],
+            "url": "https://app.hackthebox.com/sherlocks/Campfire-1",
+            "type": "Sherlock"
+        },
+        {
+            "difficulty": "Easy",
+            "icon": "/write-ups/TryHackMe/Easy/Overpass2 - Hacked/icon.png",
+            "name": "Overpass2 - Hacked",
+            "os": "Linux",
+            "platform": "TryHackMe",
+            "tags": ["PCAP", "Wireshark", "Hash cracking", "SUID"],
+            "url": "https://tryhackme.com/r/room/overpass2hacked"
+        }
+    ]
+}

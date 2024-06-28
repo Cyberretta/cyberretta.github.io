@@ -1,0 +1,50 @@
+@media print{
+    :root{
+        --code-background-color: rgb(212, 212, 212);
+    }
+    body{
+        background-image: none;
+    }
+    .topnav{
+        display: none;
+    }
+    .uiTableOfContents{
+        display: none;
+    }
+    #table-of-contents{
+        display: block;
+    }
+    .tableOfContents{
+        display: block;
+    }
+    #main{
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+        background-color: rgb(0,0,0,0);
+        color: black;
+    }
+    #downloadPDF{
+        display: none;
+    }
+    #scrollToTopButton{
+        display: none;
+    }
+    code{
+        background-color: var(--code-background-color) !important;
+    }
+    td, th{
+        border: 1px solid rgb(0, 0, 0) !important;
+    }
+    .codeBlock{
+        background-color: var(--code-background-color);
+        overflow-wrap: break-word;
+        white-space: pre-wrap;
+        word-break: break-all;
+        overflow: visible;
+        text-wrap: wrap;
+    }
+    table, img, .page{
+        page-break-inside: avoid;
+    }
+}

@@ -1,0 +1,74 @@
+<title>HackTheBox - Campfire-1 (Very easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" style="border-radius: 0;" src="/write-ups/HackTheBox/Very easy/Campfire-1/icon.png"/>
+      <p class="mainTitle">HackTheBox - Campfire-1 (Very easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="introduction">Introduction</h1>
+    <p>
+        After extracting the zip file, we can find a directory called <code>Triage</code> containing two sub-directories. One for the workstation and the other for the domain 
+        controller. They both contain a <code>.evtx</code> file (Windows XML Event Log). To read those files, I will use 
+        <a href="https://www.nirsoft.net/utils/full_event_log_view.html">FullEventLogView</a> from Nirsoft. The <code>Workstation</code> directory also contains some prefetch files 
+        of the workstation.
+    </p>
+    <h1 id="questions">Questions</h1>
+    <h2 id="question-1">Question 1</h2>
+    <p><b>Analyzing Domain Controller Security Logs, can you confirm the date & time when the kerberoasting activity occurred ?</b></p>
+    <p>
+        To perform a kerberoasting attack, the attacker must request a service ticker first. When requesting a service ticket, an event with ID <code>4769</code> is created. We can 
+        filter events with this information :
+    </p>
+    <img src="/write-ups/HackTheBox/Very easy/Campfire-1/image1.png"/>
+    <p>According to HackTricks :</p>
+    <blockquote>
+        Kerberoasting tools typically request RC4 encryption when performing the attack and initiating TGS-REQ requests. This is because RC4 is weaker and easier to crack 
+        offline using tools such as Hashcat than other encryption algorithms such as AES-128 and AES-256. RC4 (type 23) hashes begin with $krb5tgs$23$* while AES-256(type 18) 
+        start with $krb5tgs$18$*.
+    </blockquote>
+    <p>So, with this information, we can filter events to show only the ones with RC4 used for ticket encryption :</p>
+    <img src="/write-ups/HackTheBox/Very easy/Campfire-1/image2.png"/>
+    <p>This gives us only one event. This event happened at <code>2024-05-21 03:18:09</code>.</p>
+    <h2 id="question-2">Question 2</h2>
+    <p><b>What is the Service Name that was targeted ?</b></p>
+    <p>The service name target is <code>MSSQLService</code>.</p>
+    <h2 id="question-3">Question 3</h2>
+    <p><b>It is really important to identify the Workstation from which this activity occurred. What is the IP Address of the workstation ?</b></p>
+    <p>The IP address of the workstation from which the activity occurred is <code>172.17.79.129</code>.</p>
+    <h2 id="question-4">Question 4</h2>
+    <p>
+        <b>Now that we have identified the workstation, a triage including PowerShell logs and Prefetch files are provided to you for some deeper insights so we can 
+        understand how this activity occurred on the endpoint. What is the name of the file used to Enumerate Active directory objects and possibly find Kerberoastable 
+        accounts in the network ?</b>
+    </p>
+    <p>
+        The attacker may have used a PowerShell script to enumerate the domain to find kerberoastable accounts. By analysing the PowerShell event logs in 
+        <code>Powershell-Operational.evtx</code>, we can filter events with event ID equal to <code>4104</code> :
+    </p>
+    <img src="/write-ups/HackTheBox/Very easy/Campfire-1/image3.png"/>
+    <p>As we can see, by checking the description of some of the events we found, the attacker used <code>powerview.ps1</code>.</p>
+    <h2 id="question-5">Question 5</h2>
+    <p><b>When was this script executed ?</b></p>
+    <p>The script was executed at <code>2024-05-21 03:16:32</code>.</p>
+    <h2 id="question-6">Question 6</h2>
+    <p><b>What is the full path of the tool used to perform the actual kerberoasting attack ?</b></p>
+    <p>We can check the prefetch files from the workstation using WinPrefetchView from NirSoft :</p>
+    <img src="/write-ups/HackTheBox/Very easy/Campfire-1/image4.png"/>
+    <p>As we can see, the attacker used <code>Rubeus.exe</code>. The full path is <code>C:\Users\Alonzo.Spire\Downloads\Rubeus.exe</code>.</p>
+    <h2 id="question-7">Question 7</h2>
+    <p><b>When was the tool executed to dump credentials ?</b></p>
+    <p><code>Rubeus.exe</code> was executed at <code>2024-05-21 03:18:08</code> to dump credentials.</p>
+    <h1>Sources</h1>
+    <ul>
+        <li>HackTricks kerberoasting : <a href="https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/kerberoast">https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/kerberoast</a></li>
+    </ul>
+    <ul>
+        <li>Event ID 4769 : <a href="https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769">https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4769</a></li>
+    </ul>
+</div>

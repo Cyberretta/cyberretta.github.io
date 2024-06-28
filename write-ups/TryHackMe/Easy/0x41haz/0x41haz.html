@@ -1,0 +1,151 @@
+<title>TryHackMe - 0x41haz (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/0x41haz/icon.jpg"/>
+      <p class="mainTitle">TryHackMe - 0x41haz (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="introduction">Introduction</h1>
+    <blockquote>
+        In this challenge, you are asked to solve a simple reversing solution. Download and analyze the binary to discover the password.<br>
+        <br>
+        There may be anti-reversing measures in place!
+    </blockquote>
+    <p>So we have to analyze a binary to find a password.</p>
+    <h1 id="revering-the-binary">Reversing the binary</h1>
+    <h2 id="bypass-anti-reversing-protection">Bypass anti-reversing protection</h2>
+    <p>First, let's use the `file` command to get basic informations about the binary :</p>
+    <div class="codeBlock">attacker@AttackBox:~/Documents/THM/CTF/0x41haz$ file 0x41haz.0x41haz 
+0x41haz.0x41haz: ELF 64-bit MSB *unknown arch 0x3e00* (SYSV)</div>
+    <p>
+        We know it's an ELF file 64-bit MSB but we don't know the arch. I searched for <code>"unknown arch 0x3e00" elf</code> on Google, and I 
+        found <a href="https://pentester.blog/?p=247">this page</a> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image1.jpg"/>
+    <p>The author gives a solution to this error :</p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image2.jpg"/>
+    <p>Let's try this and see if it works :</p>
+    <div class="codeBlock">attacker@AttackBox:~/Documents/THM/CTF/0x41haz$ objdump -M intel -D ./0x41haz.0x41haz 
+objdump: ./0x41haz.0x41haz: format de fichier non reconnu</div>
+    <p>It says that the file format is not recognized. There is another trick explained by the author of the blog :</p>
+    <img src=""/>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image3.jpg"/>
+    <p>Let's try to change the 6th byte of the ELF file using <a href="https://linux.die.net/man/1/hexedit">hexedit</a> :</p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image4.jpg"/>
+    <p>So I changed the 6th byte from <code>0x02</code> to <code>0x01</code>. Let's try again :</p>
+    <div class="codeBlock">attacker@AttackBox:~/Documents/THM/CTF/0x41haz$ objdump -M intel -D ./0x41haz.0x41haz 
+
+./0x41haz.0x41haz:     format de fichier elf64-x86-64
+
+
+Déassemblage de la section .interp :
+
+00000000000002a8 <.interp>:
+2a8:	2f                   	(bad)  
+2a9:	6c                   	ins    BYTE PTR es:[rdi],dx
+2aa:	69 62 36 34 2f 6c 64 	imul   esp,DWORD PTR [rdx+0x36],0x646c2f34
+2b1:	2d 6c 69 6e 75       	sub    eax,0x756e696c
+2b6:	78 2d                	js     2e5 <puts@plt-0xd4b>
+2b8:	78 38                	js     2f2 <puts@plt-0xd3e>
+2ba:	36 2d 36 34 2e 73    	ss sub eax,0x732e3436
+2c0:	6f                   	outs   dx,DWORD PTR ds:[rsi]
+2c1:	2e 32 00             	xor    al,BYTE PTR cs:[rax]
+
+Déassemblage de la section .note.gnu.build-id :
+
+00000000000002c4 <.note.gnu.build-id>:
+2c4:	04 00                	add    al,0x0
+2c6:	00 00                	add    BYTE PTR [rax],al
+2c8:	14 00                	adc    al,0x0
+2ca:	00 00                	add    BYTE PTR [rax],al
+2cc:	03 00                	add    eax,DWORD PTR [rax]
+2ce:	00 00                	add    BYTE PTR [rax],al
+2d0:	47                   	rex.RXB
+2d1:	4e 55                	rex.WRX push rbp
+2d3:	00 6c 9f 2e          	add    BYTE PTR [rdi+rbx*4+0x2e],ch
+2d7:	85 b6 4d 4f 12 b9    	test   DWORD PTR [rsi-0x46edb0b3],esi
+...
+...
+...
+...</div>
+    <p>It works !</p>
+    <h2 id="analyse-c-code-with-ghidra">Analyse C code with Ghidra</h2>
+    <p>Let's try to use ghidra now. If we look at the function <code>FUN_00101165</code>, we notice that this is the function that 
+        checks if the password is good or wrong :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image5.jpg"/>
+    <p>
+        The line <code>if (*(char *)((long)&local_1e + (long)local_c) != local_48[local_c]) break;</code> seems to compare the string we enter and the 
+        good password characters one by one. It seems that the variable containing the good password is <code>local_1e</code>. Let's decode its value 
+        to ascii (This program is an MSB executable, so we have to reverse the hexadecimal code) :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image6.jpg"/>
+    <p>
+        It's only a part of the password. If you look at the condition of the while loop, you will notice that it will iterate 13 times 
+        since <code>local_c</code> starts from 0 and increment by 1 and the while loop stops when <code>local_c</code> is bigger than 12 (0xc).
+    </p>
+    <p>
+        Since the while loop checks for every characters of the password one by one, it means that the password is 13 bytes long. But we only have 
+        8 bytes for now. Since the comparison is made by using a pointer, it means that if the program tries to get a byte from <code>local_1e</code> 
+        by using an index bigger than the size of <code>local_1e</code>, it will read bytes from memory after <code>local_1e</code>.
+    </p>
+    <p>
+        To make it simple, it will read every bytes from <code>local_1e</code>, then every bytes from <code>local_16</code> (since this variable 
+        is just after <code>local_1e</code> in memory), and then it will read every bytes from <code>local_12</code>. It will make exactly 13 bytes. 
+        So the password must be a concatenation of <code>local_1e</code> + <code>local_16</code> + <code>local_12</code>.
+    </p>
+    <h2 id="retrieve-the-password">Retrieve the password</h2>
+    <p>Let's convert this hexadecimal value (like before, we have to reverse each hexadecimal values separately) :</p>
+    <img src="/write-ups/TryHackMe/Easy/0x41haz/image7.jpg"/>
+    <p>Now let's copy this string and try to use it as password :</p>
+    <div class="codeBlock">attacker@AttackBox:~/Documents/THM/CTF/0x41haz$ ./0x41haz.0x41haz 
+=======================
+Hey , Can You Crackme ?
+=======================
+It's jus a simple binary 
+
+Tell Me the Password :
+2@@25$gfsT&@L
+Well Done !!</div>
+  <p>It works ! So we have the password now. The flag is in the format <code>THM{PASSWORD}</code>.</p>
+  <h1 id="tools-used">Tools used</h1>
+  <table>
+    <thead>
+        <tr>
+            <th>Tool</th>
+            <th>Purpose</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><a href="https://en.wikipedia.org/wiki/File_(command)">file</a></td>
+            <td>Analyse the binary headers</td>
+        </tr>
+        <tr>
+            <td><a href="https://linux.die.net/man/1/hexedit">hexedit</a></td>
+            <td>Edit the hexadecimal code of the binary</td>
+        </tr>
+        <tr>
+            <td><a href="https://man7.org/linux/man-pages/man1/objdump.1.html">objdump</a></td>
+            <td>Disassemble the binary to check if it's recognized</td>
+        </tr>
+        <tr>
+            <td><a href="https://www.ghidra-sre.org/">Ghidra</a></td>
+            <td>
+                - Reverse the binary<br>
+                - Rebuild the C code of the binary
+            </td>
+        </tr>
+        <tr>
+            <td><a href="https://www.rapidtables.com/convert/number/hex-to-ascii.html">RapidTables</a></td>
+            <td>Convert hexadecimal to ASCII</td>
+        </tr>
+    </tbody>
+  </table>
+</div>

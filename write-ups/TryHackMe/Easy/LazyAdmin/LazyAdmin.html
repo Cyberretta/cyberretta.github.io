@@ -1,0 +1,242 @@
+<title>TryHackMe - LazyAdmin (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/LazyAdmin/icon.jpg"/>
+      <p class="mainTitle">TryHackMe - LazyAdmin (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <p>First, let's use <a href="https://nmap.org/book/man.html">nmap</a> to look for open ports and services on the target :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image1.jpg"/>
+    <h2 id="web-reconnaissance">Web reconnaissance</h2>
+    <p>Let's enumerate port 80. First, we can use <a href="https://github.com/OJ/gobuster">gobuster</a> to look for files and directories :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image2.jpg"/>
+    <p>Let's take a look at the <code>/content/</code> directory :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image3.jpg"/>
+    <p>
+        So now we know that the CMS Sweet Rice is installed on the web server. We can use <a href="https://github.com/OJ/gobuster">gobuster</a> 
+        again to scan the <code>/content/</code> directory :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image4.jpg"/>
+    <p>We found a directory named <code>as</code>, let's take a look at it using a web browser :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image5.jpg"/>
+    <p>We found the login page for Sweet Rice CMS.</p>
+    <h1 id="initial-access">Initial access</h1>
+    <h2 id="sweet-rice-backup-disclosure">Sweet Rice backup disclosure</h2>
+    <p>
+        By searching for <b>Sweet Rice</b> on <a href="https://www.exploit-db.com/">Exploit-DB</a>, we can find a <code>Backup Disclosure</code> 
+        on Sweet Rice 1.5.1. Here is the link to the exploit : <a href="https://www.exploit-db.com/exploits/40718">https://www.exploit-db.com/exploits/40718</a>. 
+        So we need to go to <code>http://[TARGET_IP]/content/inc/mysql_backup</code> to find MySQL backup files :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image6.jpg"/>
+    <p>
+        Let's download this MySQL backup. We may be able to find the login and password hash for Sweet Rice CMS. So let's use <code>sqlite</code> to 
+        open sqlite cli and then <code>.read &lt;filename&gt;</code> to read the backup file :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image7.jpg"/>
+    <p>
+        Now we have the username <code>manager</code> and the password hash for Sweet Rice. Let's see what hash type is it using 
+        <a href="https://hashes.com/en/decrypt/hash">hashes.com</a> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image8.jpg"/>
+    <p>It found the password ! We can now login to Sweet Rice.</p>
+    <h2 id="sweet-rice-arbitrary-file-upload">Sweet Rice arbitrary file upload</h2>
+    <p>
+        On <a href="https://www.exploit-db.com/">Exploit-DB</a>, we can also find an <mark class="red_text">Arbitrary File Upload</mark> on 
+        <b>Sweet Rice 1.5.1</b>. But we can do it manually. It's simple, <b>Sweet Rice 1.5.1</b> doesn't properly filter uploaded files. 
+        We are able to upload <code>.php5</code> files in order to get a reverse shell. Let's do it by going to <code>Media Center</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image9.jpg"/>
+    <p>Here we can upload a reverse shell :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image10.jpg"/>
+    <p>Now, we just have to start a listener on our host like so :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image11.jpg"/>
+    <p>And then we can click on the file we uploaded on the <code>Media Center</code> page on Sweet Rice to get a reverse shell :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image12.jpg"/>
+    <p>We have a reverse shell ! We can get the <code>user.txt</code> file in <code>/home/itguy</code>.</p>
+    <h1 id="post-exploitation">Post-exploitation</h1>
+    <h2 id="local-reconnaissance">Local reconnaissance</h2>
+    <p>Now, if we take a look at the files in <code>/home/itguy</code>, we can find a readable file named <code>backup.pl</code> :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image13.jpg"/>
+    <p>By looking at our sudo rights, we can notice that we have the right to execute this file as root without password :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image14.jpg"/>
+    <p>Let's see what's in this file :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image15.jpg"/>
+    <p>It executes a bash script at <code>/etc/copy.sh</code>. Let's see what's in this script :</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image16.jpg"/>
+    <p>There is a reverse shell. Do we have write permissions on this file ?</p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image17.jpg"/>
+    <p>Yes ! We can write on this file !</p>
+    <h2 id="privilege-escalation">Privilege escalation</h2>
+    <p>
+        We just have to edit the IP address and the port in order to get a reverse shell as <code>root</code> ! Then, we can start a netcat listener, 
+        and finally, we have to execute the backup script using <code>sudo /usr/bin/perl /home/itguy/backup.pl</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/LazyAdmin/image18.jpg"/>
+    <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+    <h2 id="vuln-backup-disclosure">Backup disclosure</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Affected component</td>
+            <td>Sweet Rice CMS</td>
+        </tr>
+        <tr>
+            <td>CVSS 3.0 score</td>
+            <td><mark class="highlight_red">7.5</mark></td>
+        </tr>
+        <tr>
+            <td>Severity</td>
+            <td><mark class="highlight_red">HIGH</mark></td>
+        </tr>
+        <tr>
+            <td>Attack vector</td>
+            <td>Network</td>
+        </tr>
+        <tr>
+            <td>Impact</td>
+            <td>
+                Allows an attacker to retrieve MySQL backups.<br>
+                <br>
+                This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, of the affected component.
+            </td>
+        </tr>
+        <tr>
+            <td>Remediation proposition</td>
+            <td>Update Sweet Rice to the latest version.</td>
+        </tr>
+        </tbody>
+    </table>
+    <h2 id="vuln-arbitrary-file-upload">Arbitrary file upload</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Affected component</td>
+            <td>Sweet Rice CMS</td>
+        </tr>
+        <tr>
+            <td>CVSS 3.0 score</td>
+            <td><mark class="highlight_red">8.8</mark></td>
+        </tr>
+        <tr>
+            <td>Severity</td>
+            <td><mark class="highlight_red">HIGH</mark></td>
+        </tr>
+        <tr>
+            <td>Attack vector</td>
+            <td>Network</td>
+        </tr>
+        <tr>
+            <td>Impact</td>
+            <td>
+                Allows an attacker to upload arbitrary files to the web server such as <code>.php5</code> files, which can lead to Remote 
+                Code Execution.<br>
+                <br>
+                This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>integrity</b> and <b>availability</b> 
+                of the affected component.
+            </td>
+        </tr>
+        <tr>
+            <td>Remediation proposition</td>
+            <td>Update Sweet Rice to the latest version.</td>
+        </tr>
+        </tbody>
+    </table>
+    <h2 id="vuln-file-permission-misconfiguration">File permission misconfiguration</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Field</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Affected component</td>
+            <td>/home/itguy/backup.pl file</td>
+        </tr>
+        <tr>
+            <td>CVSS 3.0 score</td>
+            <td><mark class="highlight_red">8.4</mark></td>
+        </tr>
+        <tr>
+            <td>Severity</td>
+            <td><mark class="highlight_red">HIGH</mark></td>
+        </tr>
+        <tr>
+            <td>Attack vector</td>
+            <td>Network</td>
+        </tr>
+        <tr>
+            <td>Impact</td>
+            <td>
+                Allows an attacker to edit <code>/home/itguy/backup.pl</code> in order to execute arbitrary system commands as any user such as 
+                <code>root</code>. This can lead to a full compromission of the system.<br>
+                <br>
+                This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>integrity</b> and <b>availability</b> 
+                of the affected component.
+            </td>
+        </tr>
+        <tr>
+            <td>Remediation proposition</td>
+            <td>
+                Review permissions on <code>/home/itguy/backup.pl</code>. You can for exemple, remove write permissions for everyone on this file 
+                to ensure that only <code>root</code> can edit this file.
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <h1 id="tools-used">Tools used</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><a href="https://nmap.org/">Nmap</a></td>
+                <td>
+                    - Scan for open ports<br>
+                    - Scan for services version
+                </td>
+            </tr>
+            <tr>
+                <td><a href="https://github.com/OJ/gobuster">Gobuster</a></td>
+                <td>Perform directory fuzzing on the web server</td>
+            </tr>
+            <tr>
+                <td><a href="https://www.linuxtricks.fr/wiki/nc-netcat-la-boite-a-outils-reseau">Netcat</a></td>
+                <td>Listen for incoming reverse shell connection</td>
+            </tr>
+            <tr>
+                <td><a href="https://hashes.com/en/decrypt/hash">hashes.com</a></td>
+                <td>Crack password hash</td>
+            </tr>
+        </tbody>
+    </table>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>SQLite CLI : <a href="https://sqlite.org/cli.html">https://sqlite.org/cli.html</a></li>
+    </ul>
+</div>

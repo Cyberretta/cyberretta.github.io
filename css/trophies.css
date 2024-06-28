@@ -1,0 +1,47 @@
+.certsContainer{
+    display: flex;
+    flex-flow: row wrap;
+    gap: 1vw;
+    width: 100%;
+}
+
+.cert-preview {
+    display: block;
+    width: 12vw;
+    height: 35vh;
+    padding: 2%;
+    margin-top: 5%;
+    margin-left: auto;
+    margin-right: auto;
+    transition: all 0.25s;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
+    border-radius: 1vw;
+    text-decoration: none;
+    color: white;
+}
+
+.cert-preview:hover{
+    background-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 1);
+}
+
+.cert-preview > .header{
+    display: flex;
+    align-items: center;
+}
+
+.cert-preview > .header > img{
+    max-width: 15%;
+    height: max-content;
+}
+
+.cert-preview > .header > .title{
+    width: 85%;
+    margin-right: 15%;
+    font-weight: bold;
+}
+
+.cert-preview > img{
+    object-fit: cover;
+    width: 100%;
+}

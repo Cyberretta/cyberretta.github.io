@@ -1,0 +1,70 @@
+<title>TryHackMe - DigDug (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/DigDug/icon.png"/>
+      <p class="mainTitle">TryHackMe - DigDug (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="Introduction">Introduction</h1>
+    <blockquote>
+        Oooh, turns out, this <code>10.10.154.186</code> machine is also a DNS server ! If we could dig into it, I am sure we could find 
+        some interesting records! But... it seems weird, this only responds to a special type of request for a givemetheflag.com domain ?
+    </blockquote>
+    <p>Let's add this domain to our <code>/etc/hosts</code> file :</p>
+  <div class="codeBlock">attacker@AttackBox:~/Dig_Dug$ cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	AttackBox
+10.10.154.186	givemetheflag.com
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters</div>
+    <h1 id="dns-reconnaissance">DNS reconnaissance</h1>
+    <p>Let's use [dig](https://linux.die.net/man/1/dig) to enumerate the DNS :</p>
+    <div class="codeBlock">attacker@AttackBox:~/Dig_Dug$ dig @10.10.154.186 givemetheflag.com 
+
+; &lt;&lt;&gt;&gt; DiG 9.16.33-Debian &lt;&lt;&gt;&gt; @10.10.154.186 givemetheflag.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 50226
+;; flags: qr aa; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;givemetheflag.com.		IN	A
+
+;; ANSWER SECTION:
+givemetheflag.com.	0	IN	TXT	"flag{<mark class="red_text">&lt;REDACTED&gt;</mark>}"
+
+;; Query time: 35 msec
+;; SERVER: 10.10.154.186#53(10.10.154.186)
+;; WHEN: Sat Jan 28 20:20:34 CET 2023
+;; MSG SIZE  rcvd: 86</div>
+    <p>And we have the flag !</p>
+    <h1 id="tools-used">Tools used</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><a href="https://www.ibm.com/docs/fr/aix/7.3?topic=d-dig-command">dig</a></td>
+                <td>- Perform DNS reconnaissance</td>
+            </tr>
+        </tbody>
+    </table>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>HackTricks DNS cheat-sheet : <a href="https://book.hacktricks.xyz/network-services-pentesting/pentesting-dns">https://book.hacktricks.xyz/network-services-pentesting/pentesting-dns</a></li>
+    </ul>
+</div>

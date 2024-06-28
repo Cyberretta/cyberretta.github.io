@@ -1,0 +1,406 @@
+@keyframes comboBoxOpen{
+    from{
+        max-height: 0px;
+    }
+
+    to{
+        max-height: 100vh;
+    }
+}
+
+@keyframes comboBoxClose{
+    from{
+        max-height: 100vh;
+    }
+
+    to{
+        max-height: 0px;
+    }
+}
+
+/*====MAIN STYLESHEET====*/
+html {
+    height: 100%;
+    color: #ffffff;
+    font-size: larger;
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    font-family: monospace;
+    background-image: url("/img/background.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+body.mobile{
+    background-color: red;
+}
+
+.main {
+    background-color: rgba(25, 25, 25, 0.75);
+    margin-left: 20%;
+    min-height: 100%;
+    padding-left: 5%;
+    padding-right: 25%;
+    padding-top: 1px;
+    padding-bottom: 10%;
+}
+
+.title{
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.contentPreview{
+    display: flex;
+    box-sizing: border-box;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
+    width: 100%;
+    background-color: rgb(73, 73, 73);
+    text-decoration: none;
+    color: inherit;
+    aspect-ratio: 32 / 9;
+    transition: background-color 0.5s;
+    margin-top: 6vh;
+}
+
+.contentPreview:hover{
+    background-color: rgb(105, 105, 105);;
+}
+
+.contentPreview > .illustration{
+    display:inline-block;
+    max-height: 100%;
+    width: 50%;
+    border: none;
+    object-fit: cover;
+}
+
+.contentPreview > .textContainer{
+    display: flex;
+    width: calc(50% - 2em);
+    padding: 1em;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.contentPreview > .textContainer > hr{
+    width: 80%;
+}
+
+.contentPreview > .textContainer > .title{
+    text-transform: uppercase;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: bold;
+}
+
+.contentPreview > .textContainer > .description{
+    margin-top: 0;
+    overflow-y: auto;
+    text-align: justify;
+}
+
+.item-preview {
+    display: block;
+    padding: 2%;
+    margin-top: 5%;
+    margin-bottom: 5%;
+    transition: 0.5s;
+    color: inherit;
+    text-decoration: none;
+}
+
+.item-preview:hover{
+    background-color: rgba(255, 255, 255, 0.5);
+    transition: background-color 0.5s;
+}
+
+.item-preview-illustration{
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    width: 50%;
+}
+
+.item-preview h3{
+    font-size: xx-large;
+}
+
+.entry {
+    text-decoration: none;
+    display: block;
+    color: inherit;
+    transition: background-color 0.5s;
+    margin-bottom: 3%;
+}
+
+.entry:hover {
+    background-color: rgba(179, 179, 179, 0.5);
+    transition: background-color 0.5s;
+}
+
+.entry img {
+    display: inline;
+    width: 5%;
+    vertical-align: middle;
+}
+
+.entry h3 {
+    display: inline;
+    vertical-align: middle;
+    width: 5%;
+    padding-left: 2%;
+}
+
+#scrollToTopButton{
+    position: fixed;
+    bottom: 3vh;
+    right: 20vw;
+    width: 3vw;
+    opacity: 60%;
+    cursor: pointer;
+}
+
+#scrollToTopButton:hover{
+    opacity: 100%;
+}
+
+#searchBox{
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    width: 20%;
+    right: 2%;
+    top: 2%;
+    background-color: #333;
+    border-radius: 30px;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
+    align-items: center;
+    padding: 1em;
+    gap: 1em;
+}
+
+#searchBox > .filter{
+    display:flex;
+    flex-direction: column;
+    height: fit-content;
+    width: 90%;
+}
+
+#searchBox > .filter > .tagsContainer{
+    display: flex;
+    flex-flow: row wrap;
+    background-color: rgb(110, 110, 110);
+    width: calc(100% - 1em);
+    height: 7em;
+    user-select: none;
+    border-radius: 0.5em;
+    padding: 0.5em;
+    color: white;
+    gap: 0.5em;
+    overflow-y: auto;
+    align-content: flex-start;
+}
+
+#searchBox > .filter > .tagsContainer > p{
+    margin: 0;
+    height: fit-content;
+}
+
+#searchBox > .filter > .tagsContainer > .noTagsSpecified.hidden{
+    display: none;
+}
+
+#searchBox .inputText{
+    position: relative;
+    background-color: white;
+    width: calc(100% - 0.5em);
+    height: 2em;
+    user-select: none;
+    outline: none;
+    border: none;
+    padding-left: 0.5em;
+    color:black;
+    line-height: 2em;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+#searchBox > .filter > .comboBox{
+    position: relative;
+    background-color: white;
+    width: 100%;
+    height: 2em;
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+}
+
+#searchBox > .filter > .comboBox > .head{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    align-items: center;
+}
+
+#searchBox > .filter > .comboBox > .entriesList{
+    display: block;
+    width: 100%;
+    height: 0px;
+    overflow: hidden;
+    animation-name: comboBoxClose;
+    animation-duration: 1s;
+}
+
+#searchBox > .filter > .comboBox > .entriesList > .entry{
+    display: flex;
+    height: 2em;
+    margin: 0;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+#searchBox > .filter > .comboBox > .entriesList > .entry > .checkBox{
+    height: 1em;
+    width: 1em;
+    border: 0.1em solid grey;
+}
+
+#searchBox > .filter > .comboBox > .entriesList > .entry > .checkBox.checked{
+    background-color: #5e87c9;
+}
+
+#searchBox > .filter > .comboBox > .entriesList > .entry > *{
+    display: inline-block;
+    margin: 0;
+    height: fit-content;
+    margin-left: 1em;
+}
+
+#searchBox > .button{
+    display: inline-block;
+    width: 90%;
+    height: 2.5em;
+    border-radius: 2.5em;
+    border: 0.2em solid;
+    font-weight: bold;
+    transition: all 0.5s;
+    cursor: pointer;
+}
+
+#searchBox > .button.apply{
+    --color: rgb(18, 156, 0);
+    color: var(--color);
+    border-color: var(--color);
+}
+
+#searchBox > .button.apply:hover{
+    background-color: var(--color);
+    color: white;
+}
+
+#searchBox > .button.reset{
+    --color: rgb(201, 0, 0);
+    color: var(--color);
+    border-color: var(--color);
+}
+
+#searchBox > .button.reset:hover{
+    background-color: var(--color);
+    color: white;
+}
+
+#searchBox > .button:disabled{
+    --color: rgb(153, 153, 153);
+    color: var(--color);
+    border-color: var(--color);
+    background-color: rgb(107, 107, 107);
+    cursor: default;
+}
+
+#searchBox > .button:disabled:hover{
+    --color: rgb(153, 153, 153);
+    color: var(--color);
+    border-color: var(--color);
+    background-color: initial;
+    background-color: rgb(107, 107, 107);
+}
+
+#searchBox > .filter > .comboBox > .head > .selectionContainer{
+    display: inline-block;
+    height: fit-content;
+    width: calc(100% - 3em);
+    padding-left: 1em;
+    height: 1em;
+    white-space: nowrap;
+}
+
+#searchBox > .filter > .comboBox > .head > .selectionContainer > .selection{
+    height: fit-content;
+    width: fit-content;
+    margin: 0;
+    color: black;
+    overflow-x: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+}
+
+#searchBox > .filter > .comboBox > .head > .selectionContainer > .selection.empty{
+    height: fit-content;
+    width: fit-content;
+    margin: 0;
+    color: rgb(182, 182, 182);
+}
+
+#searchBox > .filter > .comboBox > .head > .stateIconContainer{
+    display: inline-block;
+    width: 2em;
+    height: 2em;
+}
+
+#searchBox > .filter > .comboBox > .head > .stateIconContainer > .stateIcon{
+    width: 100%;
+    height: 100%;
+    transition: rotate 0.5s;
+}
+
+#searchBox > .filter > .comboBox.active > .head > .stateIconContainer > .stateIcon{
+    rotate: -180deg;
+}
+
+#searchBox > .filter > .comboBox.active > .entriesList{
+    color: black;
+    background-color: white;
+    height: auto;
+    overflow: auto;
+    animation-name: comboBoxOpen;
+    animation-duration: 1s;
+}
+
+#searchBox > .filter > .comboBox.active{
+    z-index: 2;
+}
+
+.profileBadge{
+    width: 100%;
+    height: 100%;
+}
+
+.profileBadge img:hover{
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    border: 3px solid white;
+}
+
+#searchButton{
+    width: 10vw;
+    height: 5vh;
+    margin-left: 5vw;
+    margin-bottom: 1vw;
+}

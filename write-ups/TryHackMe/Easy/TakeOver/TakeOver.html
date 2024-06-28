@@ -1,0 +1,80 @@
+<title>TryHackMe - TakeOver (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/TakeOver/icon.png"/>
+      <p class="mainTitle">TryHackMe - TakeOver (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <p>
+        Let's run a basic nmap scan against the target. We don't need to make an aggressive scan since we just have to find the subdomain that 
+        can be taken over, so we just need to know on what ports is the webserver :
+    </p>
+    <div class="codeBlock">attacker@AttackBox:~/TakeOver$ nmap futurevera.thm -oN nmapResults.txt
+Starting Nmap 7.80 ( https://nmap.org ) at 2023-01-21 15:52 CET
+Nmap scan report for futurevera.thm (10.10.125.247)
+Host is up (0.047s latency).
+Not shown: 997 closed ports
+PORT    STATE SERVICE
+22/tcp  open  ssh
+80/tcp  open  http
+443/tcp open  https
+
+Nmap done: 1 IP address (1 host up) scanned in 0.79 seconds</div>
+    <h1 id="finding-the-first-subdomain">Finding the first subdomain</h1>
+    <p>
+        In the statement of the room, we are told the company is rebuilding their <b>support</b>. They may have a subdomain named <code>support</code>. Let's 
+        add it to <code>/etc/hosts</code> :
+    </p>
+    <div class="codeBlock">attacker@AttackBox:~/TakeOver$ sudo nano /etc/hosts
+attacker@AttackBox:~/TakeOver$ cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	AttackBox
+10.10.125.247	futurevera.thm	support.futurevera.thm
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters</div>
+    <p>Now, let's see what we can find on this subdomain using a web browser :</p>
+    <img src="/write-ups/TryHackMe/Easy/TakeOver/image1.jpg"/>
+    <p>Let's click on <code>Show certificate</code> (<code>Afficher le certificat</code> in french) :</p>
+    <img src="/write-ups/TryHackMe/Easy/TakeOver/image2.jpg"/>
+    <h1 id="finding-the-second-subdomain">Finding the second subdomain</h1>
+    <p>If we go a little lower on the certificate, we can find an alternative subdomain :</p>
+    <img src="/write-ups/TryHackMe/Easy/TakeOver/image3.jpg"/>
+    <p>Let's add it to our <code>/etc/hosts</code> :</p>
+    <div class="codeBlock">attacker@AttackBox:~/TakeOver$ cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	AttackBox
+10.10.125.247	futurevera.thm	support.futurevera.thm	<mark class="red_text">&lt;REDACTED&gt;</mark>.support.futurevera.thm
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters</div>
+        <p>And now, let's see what we can find on it using a web browser (you need to access this subdomain on port 80, not port 443) :</p>
+        <img src="/write-ups/TryHackMe/Easy/TakeOver/image4.jpg"/>
+        <p>
+            We are redirected to an AWS web server, but not found. And we can see the flag in the URL !
+            So we found the subdomain the black hats can take over 
+            (<code>flag{<mark class="red_text">&lt;REDACTED&gt;</mark>}.s3-website-us-west-3.amazonaws.com</code>) and the flag !
+        </p>
+        <h1 id="sources">Sources</h1>
+        <ul>
+            <li>HackTricks subdomain takeover cheat sheet : <a href="https://book.hacktricks.xyz/pentesting-web/domain-subdomain-takeover">https://book.hacktricks.xyz/pentesting-web/domain-subdomain-takeover</a></li>
+        </ul>
+        <ul>
+            <li>HackerOne subdomain takeover documentation : <a href="https://www.hackerone.com/application-security/guide-subdomain-takeovers">https://www.hackerone.com/application-security/guide-subdomain-takeovers</a></li>
+        </ul>
+        <ul>
+            <li>Mozilla subdomain takeover documentation : <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subdomain_takeovers">https://developer.mozilla.org/en-US/docs/Web/Security/Subdomain_takeovers</a></li>
+        </ul>
+</div>

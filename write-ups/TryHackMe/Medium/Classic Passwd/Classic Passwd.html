@@ -1,0 +1,252 @@
+<title>TryHackMe - Classic Passwd (Medium)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Medium/Classic Passwd/icon.jpg"/>
+      <p class="mainTitle">TryHackMe - Classic Passwd (Medium)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="basic-analysis">Basic analysis</h1>
+    <p>First, I used <code>file Challenge.Challenge</code> to know what type of file it is :</p>
+    <div class="codeBlock">┌──(attacker㉿AttackBox)-[~/Bureau/CTF/Classic_Passwd]
+└─$ file Challenge.Challenge 
+Challenge.Challenge: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=b80ce38cb25d043128bc2c4e1e122c3d4fbba7f7, for GNU/Linux 3.2.0, not stripped</div>
+    
+    <h1 id="reversing-with-ghidra">Reversing with ghidra</h1>
+    <p>Looking at the functions in the executable, we can see 3 interesting functions :</p>
+    <ul>
+        <li>main</li>
+    </ul>
+    <ul>
+        <li>gfl</li>
+    </ul>
+    <ul>
+        <li>vuln</li>
+    </ul>
+    <img src="/write-ups/TryHackMe/Medium/Classic Passwd/image1.png"/>
+    <p>First, let's see the main function :</p>
+    <div class="codeBlock">undefined8 main(void)
+
+{
+    vuln();
+    gfl();
+    return 0;
+}</div>
+    <p>
+        We see in the main function (this function is the entry point of the program) that there is 2 functions called. <code>vuln()</code> and 
+        then <code>gfl()</code>. I think <code>gfl</code> stands for 'get flag', and obviously, <code>vuln</code> stands for vulnerable. Let's 
+        take a look at the <code>vuln</code> function :
+    </p>
+    <div class="codeBlock">void vuln(void)
+
+{
+  int iVar1;
+  char local_2c8 [130];
+  undefined8 local_246;
+  undefined4 local_23e;
+  undefined2 local_23a;
+  char local_238 [512];
+  undefined8 local_38;
+  undefined8 local_30;
+  undefined8 local_28;
+  undefined2 local_20;
+  undefined local_1e;
+  undefined8 local_15;
+  undefined4 local_d;
+  undefined local_9;
+  
+  local_15 = 0x207962206564614d;
+  local_d = 0x6e6f6e34;
+  local_9 = 0;
+  local_38 = 0x2f2f3a7370747468;
+  local_30 = 0x632e627568746967;
+  local_28 = 0x69626f306e2f6d6f;
+  local_20 = 0x3474;
+  local_1e = 0;
+  local_246 = 0x6435736a36424741;
+  local_23e = 0x476b6439;
+  local_23a = 0x37;
+  printf("Insert your username: ");
+  __isoc99_scanf(&DAT_0010201b,local_238);
+  strcpy(local_2c8,local_238);
+  iVar1 = strcmp(local_2c8,(char *)&local_246);
+  if (iVar1 == 0) {
+    puts("\nWelcome");
+    return;
+  }
+  puts("\nAuthentication Error");
+                    /* WARNING: Subroutine does not return */
+  exit(0);
+}</div>
+    <p>
+        So what is happening in this function ? First, there are some variable declarations. We can skip this for the moment. Then, the program 
+        asks a username to the user using the scanf function. The program copies the variable <code>local_238</code> (which contains the string 
+        the user entered before) to the variable <code>local_2c8</code>.<br>
+        <br>
+        Then, it compares the variable <code>local_2c8</code> to the variable <code>local_246</code> (so we can assume that <code>local_246</code> 
+        contains the right username). If they are equal, the program prints <code>Welcome</code>, else, it prints <code>Authentification Error</code>
+    </p>
+    <h1 id="first-method">First method</h1>
+    <p>
+        Knowing that <code>local_246</code> contains the right username, we can look at its value and try to decode it. So <code>local_246</code> 
+        is equal to <code>0x6435736a36424741</code>. But remember, this is an ELF 64-bit **LSB** pie executable, which means that we have to start 
+        interpreting this value from the least significant bit. So let's reverse it like so : <code>41 47 42 36 6a 73 35 64</code><br>
+        Now let's decode this to ASCII : <code>AGB6js5d</code><br>
+        <br>
+        If you try to use this as a username, it won't work. Why ? Because it's only a part of the username to find. Looking at the C code 
+        in <a href="https://www.ghidra-sre.org/">ghidra</a> don't help. So let's take a look at the assembly code :
+    </p>
+    <img src="/write-ups/TryHackMe/Medium/Classic Passwd/image2.png"/>
+    <p>
+        We can see that there is 3 hexadecimal values here, the first one is the one we already decoded, and the two others seems to be the missing 
+        parts of the username. You may be asking <b>"Why those three values ?"</b>. To answer this question, we must know something about the 
+        <code>strcmp</code> function. This function will read strings till it encounters a <b>null byte</b>. But as you can see, those 3 values are not 
+        separeted by a null byte.<br>
+        <br>
+        The first null byte <code>strcmp</code> will encounter when reading memory from the first string is right after the 
+        third string (<code>0x37</code>). So let's try to decode the two values we are missing and see if it works :
+    </p>
+    <ul>
+        <li><code>0x476b6439</code> -> <code>9dkG</code></li>
+    </ul>
+    <ul>
+        <li><code>0x37</code> -> <code>7</code></li>
+    </ul>
+    <p>
+        So if we take the 3 values we found and put them together, we have <code>AGB6js5d9dkG7</code>. Let's use it in the program to 
+        get the flag :
+    </p>
+    <div class="codeBlock">attacker@AttackBox:~/Bureau/CTF/Classic_Passwd$ ./Challenge.Challenge 
+Insert your username: AGB6js5d9dkG7
+
+Welcome
+THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}
+attacker@AttackBox:~/Bureau/CTF/Classic_Passwd$</div>
+    <h1 id="second-method">Second method</h1>
+    <p>
+        We can use <code>ltrace</code> to recover the value of <code>local_246</code> variable (the variable that contains the right username). I used 
+        <code>ltrace ./Challenge.Challenge</code>. When the program asked for a username, I just entered a random string <code>test</code>. 
+        And I got the value of variable <code>local_246</code> :
+    </p>
+    <div class="codeBlock">attacker@AttackBox:~/Bureau/CTF/Classic_Passwd$ ltrace ./Challenge.Challenge 
+printf("Insert your username: ")                                         = 22
+__isoc99_scanf(0x55b7e298d01b, 0x7ffda64a7a60, 0, 0Insert your username: test
+)                     = 1
+strcpy(0x7ffda64a79d0, "test")                                           = 0x7ffda64a79d0
+strcmp("test", "AGB6js5d9dkG7")                                          = 51
+puts("\nAuthentication Error"
+Authentication Error
+)                                           = 22
+exit(0 &lt;no return ...&gt;
++++ exited (status 0) +++</div>
+    <p>
+        Now we have the right username which is <code>AGB6js5d9dkG7</code>. To get the flag, we just have to execute the binary like 
+        this : <code>./Challenge.Challenge</code>. When the executable asks for a username, we just need to enter <code>AGB6js5d9dkG7</code>, 
+        and we have the flag !
+    </p>
+    <div class="codeBlock">attacker@AttackBox:~/Bureau/CTF/Classic_Passwd$ ./Challenge.Challenge 
+Insert your username: AGB6js5d9dkG7
+
+Welcome
+THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}</div>
+    <h1 id="third-method">Third method</h1>
+    <p>
+        There is a third method to get the flag, but this time without finding the right username. Let's take a look at the 
+        <code>gfl</code> function :
+    </p>
+    <div class="codeBlock">void gfl(void)
+
+{
+    int local_10;
+    int local_c;
+    
+    local_c = 0x52c8d5;
+    do {
+    if (0x77d088 < local_c) {
+        return;
+    }
+    if (local_c == 0x638a78) {
+        for (local_10 = 0x1474; local_10 < 9999; local_10 = local_10 + 1) {
+        if (local_10 == 0x2130) {
+            printf("THM{%d%d}",0x638a78,0x2130);
+                    /* WARNING: Subroutine does not return */
+            exit(0);
+        }
+        }
+    }
+    local_c = local_c + 1;
+    } while( true );
+}</div>
+    <p>Let's resume what happens in this function :</p>
+    <ul>
+        <li>There is some variables declarations of course. After that, there is a while loop.</li>
+    </ul>
+    <ul>
+        <li>
+            In this while loop, if the variable <code>local_c</code> is greater than <code>0x77d088</code>, we exit the <code>gfl</code> function 
+            and it returns nothing.
+        </li>
+    </ul>
+    <ul>
+        <li>Then, if the <code>local_c</code> variable is equal to <code>0x638a78</code>, we enter in a for loop.</li>
+    </ul>
+    <ul>
+        <li>
+            At the beginning of the for loop, we give the <code>local_10</code> variable an initial value of <code>0x1474</code>, and 
+            since it is lesser than <code>9999</code>, we increase this variable by <code>1</code> and we continue to go throughout the for loop.
+        </li>
+    </ul>
+    <ul>
+        <li>In the for loop, we check if <code>local_10</code> is equal to <code>0x2130</code>, if <code>true</code>, we print something in the console.</li>
+    </ul>
+    <p>
+        Let's take a closer look at this print. It looks like it is the flag we are looking for. The two hexadecimal values passed as arguments in 
+        the function are interpreted as integer values (because of the <code>%d</code> in the print), so let's try to convert them to integer values :
+    </p>
+    <ul>
+        <li>The first one (<code>0x638a78</code>) is equal to <code>6523512</code></li>
+    </ul>
+    <ul>
+        <li>The second (<code>0x2130</code>) is equal to <code>8496</code></li>
+    </ul>
+    <p>So we have the flag : <code>THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}</code>.</p>
+    <h1 id="tools-used">Tools used</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><a href="https://en.wikipedia.org/wiki/File_(command)">file</a></td>
+                <td>Analyse the binary headers</td>
+            </tr>
+            <tr>
+                <td><a href="https://man7.org/linux/man-pages/man1/ltrace.1.html">ltrace</a></td>
+                <td>Display calls to shared libraries</td>
+            </tr>
+            <tr>
+                <td><a href="https://www.ghidra-sre.org/">Ghidra</a></td>
+                <td>
+                    - Analyse the binary assembly code<br>
+                    - Rebuild the C code of the binary
+                </td>
+            </tr>
+            <tr>
+                <td><a href="https://www.rapidtables.com/convert/number/hex-to-decimal.html">RapidTables</a></td>
+                <td>Convert hexadecimal values to string or integers</td>
+            </tr>
+        </tbody>
+    </table>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>strcmp function : <a href="https://www.geeksforgeeks.org/strcmp-in-c/">https://www.geeksforgeeks.org/strcmp-in-c/</a></li>
+    </ul>
+</div>

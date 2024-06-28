@@ -1,0 +1,25 @@
+{
+    "LatestContents": [
+        {
+            "type" : "write-up",
+            "title" : "Compte rendu du Sherlock Brutus (Very easy) sur HackTheBox",
+            "description": "J'ai publié le compte rendu du Sherlock Brutus de la plateforme HackTheBox ! Ce challenge est un challenge forensic visant à analyser des logs d'un serveur Linux ayant subi une attaque par brute force sur le service SSH.",
+            "url" : "/write-ups/read.html?platform=HackTheBox&difficulty=Very%20easy&name=Brutus",
+            "illustrationUrl" : "/write-ups/HackTheBox/Very%20easy/Brutus/boxFinished.png"
+        },
+        {
+            "type" : "youtube-video",
+            "title" : "ACTU CYBER #1 - VULNÉRABILITÉS MATÉRIELLES CHEZ AMD ET APPLE",
+            "description" : "Première vidéo Actu Cyber ! Je compte en faire une série de vidéos (lorsque je trouve le temps de poster des videos). Vous pourrez y trouver un résumer de vulnérabilités récentes et autres news du monde de la cybersécurité !",
+            "url" : "https://www.youtube.com/watch?v=hgUWk3NCWcc",
+            "illustrationUrl" : "https://youtube.com/embed/hgUWk3NCWcc?controls=0&autoplay=1"
+        },
+        {
+            "type" : "project",
+            "title" : "AwsLogAnalyser - Un analyseur de logs AWS avec GUI",
+            "description" : "AwsLogAnalyser est un petit programme codé en C++ (avec Qt) avec un GUI permettant d'analyser des logs AWS au format JSON. Il comporte des fonctionnalités telles que le filtrage d'events, le calcul de statistiques comme le nombre d'events générés par adresses IP et bien d'autres. Cet outil reste un work in progress à l'heure actuelle.",
+            "url" : "https://github.com/Cyberretta/AwsLogAnalyser/blob/main/preview.png",
+            "illustrationUrl" : "/projects/AwsLogAnalyser/preview.png"
+        }
+    ]
+}

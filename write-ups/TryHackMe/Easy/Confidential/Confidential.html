@@ -1,0 +1,64 @@
+<title>TryHackMe - Confidential (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/Confidential/icon.png"/>
+      <p class="mainTitle">TryHackMe - Confidential (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="Introduction">Introduction</h1>
+    <p>Let's read the instructions of this room :</p>
+    <blockquote>
+        We got our hands on a confidential case file from some self-declared "black hat hackers"... it looks like they have a secret invite 
+        code available within a QR code, but it's covered by some image in this PDF! If we want to thwart whatever it is they are planning, 
+        we need your help to uncover what that QR code says ! Access this challenge by deploying the machine attached to this task by pressing 
+        the green "Start Machine" button. This machine shows in Split View in your browser, if it doesn't automatically display you may need 
+        to click "Show Split View" in the top right.<br>
+        <br>
+        The file you need is located in <code>/home/ubuntu/confidential</code> on the VM.
+    </blockquote>
+    <h1 id="get-the-qr-code">Get the QR Code</h1>
+    <p>Let's take a look at the given pdf file :</p>
+    <img src="/write-ups/TryHackMe/Easy/Confidential/image1.jpg"/>
+    <p>
+        So we need to uncover the QR Code. It seems that one image (the red sign) was placed over the other (the QR Code). If it's two separate 
+        images, it's maybe possible to extract them from the pdf file. After some research, I found that you can extract images from a pdf file 
+        using <code>pdfimages</code> from <a href="https://doc.ubuntu-fr.org/poppler-utils#poppler-utils">Poppler-utils</a>.
+    </p>
+    <p>Let's use this tool to extract images from the pdf file :</p>
+    <div class="codeBlock">ubuntu@thm-confidential:~/confidential$ pdfimages Repdf.pdf image
+ubuntu@thm-confidential:~/confidential$ ls
+Repdf.pdf  image-000.ppm  image-001.ppm  image-002.ppm</div>
+        <p>We successfuly extracted three images from the pdf file :</p>
+        <img src="/write-ups/TryHackMe/Easy/Confidential/image2.jpg"/>
+        <p>
+            Now we can read the QR Code. But be careful, you should never scan an unknown QR Code, you can use online tools for this. I 
+            used <a href="https://webqr.com/index.html">Web QR</a> :
+        </p>
+        <img src="/write-ups/TryHackMe/Easy/Confidential/image3.jpg"/>
+        <p>And we have the flag !</p>
+        <h1 id="tools-used">Tools used</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><a href="https://www.xpdfreader.com/pdfimages-man.html">pdfimages</a></td>
+                    <td>Extract images from PDF files</td>
+                </tr>
+            </tbody>
+        </table>
+        <h1 id="sources">Sources</h1>
+        <ul>
+            <li>Extracting images from PDF file : <a href="https://www.cyberciti.biz/faq/easily-extract-images-from-pdf-file/">https://www.cyberciti.biz/faq/easily-extract-images-from-pdf-file/</a></li>
+        </ul>
+</div>

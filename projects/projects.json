@@ -1,0 +1,10 @@
+{
+    "Projects": [
+        {
+            "title" : "AwsLogAnalyser - Un analyseur de logs AWS avec GUI",
+            "illustration" : "/projects/AwsLogAnalyser/preview.png",
+            "url": "/projects/AwsLogAnalyser/index.html",
+            "description" : "AwsLogAnalyser est un petit programme codé en C++ (avec Qt) avec un GUI permettant d'analyser des logs AWS au format JSON. Il comporte des fonctionnalités tel que le filtrage d'events, le calcul de statistiques comme le nombre d'events générés par addresses IP et bien d'autres. Cet outil reste un work in progress à l'heure actuelle."
+        }
+    ]
+}

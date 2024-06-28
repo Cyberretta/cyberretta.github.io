@@ -1,0 +1,67 @@
+{
+    "Trophies": [
+        {
+            "name":"Offshore",
+            "description":"Certificat d'achèvement du prolab Offshore sur la plateforme HackTheBox",
+            "image":"/img/trophies/Offshore.png",
+            "url":"",
+            "type":"certificate"
+        },
+        {
+            "name":"Zephyr",
+            "description":"Certificat d'achèvement du prolab Zephyr sur la plateforme HackTheBox",
+            "image":"/img/trophies/Zephyr.png",
+            "url":"/trophies/Zephyr/Zephyr.html",
+            "type":"certificate"
+        },
+        {
+            "name":"Dante",
+            "description":"Certificat d'achèvement du prolab Dante sur la plateforme HackTheBox",
+            "image":"/img/trophies/Dante.png",
+            "url":"",
+            "type":"certificate"
+        },
+        {
+            "name":"ICCA",
+            "description":"Certification INE Certified Cloud Assosiate",
+            "image":"/img/trophies/ICCA.png",
+            "url":"",
+            "type":"certification"
+        },
+        {
+            "name":"eJPT",
+            "description":"Certification eLearnSecurity Junior Penetration Tester",
+            "image":"/img/trophies/eJPT.png",
+            "url":"",
+            "type":"certification"
+        },
+        {
+            "name":"HackTheBox - Season 1",
+            "description":"Résultat de la saison 1 sur HackTheBox",
+            "image":"/img/trophies/hackthebox_season1.png",
+            "url":"",
+            "type":"trophy"
+        },
+        {
+            "name":"HackTheBox - Season 2",
+            "description":"Résultat de la saison 2 sur HackTheBox",
+            "image":"/img/trophies/hackthebox_season2.png",
+            "url":"",
+            "type":"trophy"
+        },
+        {
+            "name":"HackTheBox - Season 3",
+            "description":"Résultat de la saison 3 sur HackTheBox",
+            "image":"/img/trophies/hackthebox_season3.png",
+            "url":"",
+            "type":"trophy"
+        },
+        {
+            "name":"HackTheBox - Season 4",
+            "description":"Résultat de la saison 4 sur HackTheBox",
+            "image":"/img/trophies/hackthebox_season4.png",
+            "url":"",
+            "type":"trophy"
+        }
+    ]
+}

