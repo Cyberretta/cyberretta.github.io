@@ -18,7 +18,8 @@
     width: 40vw;
     height: 40vh;
     pointer-events:none;
-    background-size: 300%;
+    /*background-size: 300%;*/
+    background-repeat: no-repeat;
 }
 
 #downloadPDF:hover{
@@ -148,6 +149,14 @@
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+.imageOverlay > .imageContainer > img{
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    margin: auto;
+    box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
 }
 
 code{
