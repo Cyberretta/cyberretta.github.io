@@ -62,6 +62,13 @@
             "image":"/img/trophies/hackthebox_season4.png",
             "url":"",
             "type":"trophy"
+        },
+        {
+            "name":"ISC2 - Course Pre-assessment",
+            "description":"",
+            "image":"/img/trophies/ISC2_-_Course_Pre-assessment.png",
+            "url":"/trophies/ISC2 - Course Pre-assessment (CC)/ISC2 - Course Pre-assessment (CC).html",
+            "type":"certificate"
         }
     ]
 }
