@@ -6,6 +6,10 @@
     box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5);
 }
 
+#navMenu a{
+    transition: none;
+}
+
 #navMenu > .header{
     display: flex;
     height: 10vh;
@@ -16,7 +20,7 @@
     align-items: center;
 }
 
-#navMenu > .header > p{
+#navMenu > .header > div{
     padding: 2.5%;
     padding-right: 0;
 }

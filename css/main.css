@@ -26,6 +26,16 @@ html {
     scroll-behavior: smooth;
 }
 
+a {
+    text-decoration: none;
+    color: rgb(88, 155, 255);
+    transition: all 0.25s;
+}
+
+a:hover {
+    font-weight: bold;
+}
+
 body {
     margin: 0;
     height: 100%;
